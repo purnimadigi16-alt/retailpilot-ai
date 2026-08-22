@@ -324,7 +324,7 @@ export default function PosPage() {
                     <div className="max-w-[150px]">
                       <p className="font-semibold text-foreground truncate">{item.name}</p>
                       <p className="text-[10px] text-muted-foreground font-mono">
-                        ${item.selling_price.toFixed(2)} each
+                        ₹{item.selling_price.toFixed(2)} each
                       </p>
                     </div>
 
@@ -345,7 +345,7 @@ export default function PosPage() {
                         </button>
                       </div>
                       <span className="font-mono font-bold text-xs w-12 text-right">
-                        ${(item.selling_price * item.quantity).toFixed(2)}
+                        ₹{(item.selling_price * item.quantity).toFixed(2)}
                       </span>
                       <button
                         onClick={() => removeFromCart(item.product_id)}
@@ -364,14 +364,14 @@ export default function PosPage() {
           <div className="mt-4 pt-4 border-t border-border space-y-2 text-xs">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal:</span>
-              <span className="font-mono font-semibold">${subtotal.toFixed(2)}</span>
+              <span className="font-mono font-semibold">₹{subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>GST / Sales Tax (8%):</span>
-              <span className="font-mono font-semibold">${tax.toFixed(2)}</span>
+              <span className="font-mono font-semibold">₹{tax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-muted-foreground items-center">
-              <span>Discount ($):</span>
+              <span>Discount (₹):</span>
               <input
                 type="number"
                 min="0"
@@ -383,7 +383,7 @@ export default function PosPage() {
             </div>
             <div className="flex justify-between text-base font-extrabold text-foreground pt-2 border-t border-border">
               <span>Final Total:</span>
-              <span className="font-mono text-blue-600 dark:text-blue-400">${finalTotal.toFixed(2)}</span>
+              <span className="font-mono text-blue-600 dark:text-blue-400">₹{finalTotal.toFixed(2)}</span>
             </div>
 
             <button
@@ -392,7 +392,7 @@ export default function PosPage() {
               className="w-full mt-3 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-xs font-bold text-white shadow-lg shadow-blue-500/25 hover:opacity-95 disabled:opacity-50 transition"
             >
               <CreditCard className="h-4 w-4" />
-              <span>Proceed to Split Checkout (${finalTotal.toFixed(2)})</span>
+              <span>Proceed to Split Checkout (₹{finalTotal.toFixed(2)})</span>
             </button>
           </div>
         </div>
@@ -405,7 +405,7 @@ export default function PosPage() {
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <h2 className="font-bold text-base text-foreground">Split Payment & Settlement</h2>
               <span className="font-mono font-extrabold text-blue-600 dark:text-blue-400 text-lg">
-                ${finalTotal.toFixed(2)}
+                ₹{finalTotal.toFixed(2)}
               </span>
             </div>
 
@@ -430,7 +430,7 @@ export default function PosPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between rounded-xl border border-border bg-background/60 p-2.5">
                 <div className="flex items-center gap-2 text-xs font-medium">
-                  <Banknote className="h-4 w-4 text-emerald-500" /> Cash ($)
+                  <Banknote className="h-4 w-4 text-emerald-500" /> Cash (₹)
                 </div>
                 <input
                   type="number"
@@ -443,7 +443,7 @@ export default function PosPage() {
 
               <div className="flex items-center justify-between rounded-xl border border-border bg-background/60 p-2.5">
                 <div className="flex items-center gap-2 text-xs font-medium">
-                  <CreditCard className="h-4 w-4 text-blue-500" /> Card / POS ($)
+                  <CreditCard className="h-4 w-4 text-blue-500" /> Card / POS (₹)
                 </div>
                 <input
                   type="number"
@@ -456,7 +456,7 @@ export default function PosPage() {
 
               <div className="flex items-center justify-between rounded-xl border border-border bg-background/60 p-2.5">
                 <div className="flex items-center gap-2 text-xs font-medium">
-                  <QrCode className="h-4 w-4 text-purple-500" /> UPI / QR ($)
+                  <QrCode className="h-4 w-4 text-purple-500" /> UPI / QR (₹)
                 </div>
                 <input
                   type="number"
@@ -469,7 +469,7 @@ export default function PosPage() {
 
               <div className="flex items-center justify-between rounded-xl border border-border bg-background/60 p-2.5">
                 <div className="flex items-center gap-2 text-xs font-medium">
-                  <Award className="h-4 w-4 text-amber-500" /> Loyalty Points ($)
+                  <Award className="h-4 w-4 text-amber-500" /> Loyalty Points (₹)
                 </div>
                 <input
                   type="number"
@@ -487,11 +487,11 @@ export default function PosPage() {
                 ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
                 : "bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
             }`}>
-              <span>Entered: ${enteredPaymentsTotal.toFixed(2)} / ${finalTotal.toFixed(2)}</span>
+              <span>Entered: ₹{enteredPaymentsTotal.toFixed(2)} / ₹{finalTotal.toFixed(2)}</span>
               <span>
                 {Math.abs(paymentRemaining) <= 0.05
                   ? "✓ Balanced Exactly"
-                  : `Remaining: $${paymentRemaining.toFixed(2)}`}
+                  : `Remaining: ₹${paymentRemaining.toFixed(2)}`}
               </span>
             </div>
 
@@ -543,7 +543,7 @@ export default function PosPage() {
                 {completedSale.cartItems.map((item: any) => (
                   <div key={item.product_id} className="flex justify-between text-[11px]">
                     <span>{item.quantity}x {item.name}</span>
-                    <span>${(item.selling_price * item.quantity).toFixed(2)}</span>
+                    <span>₹{(item.selling_price * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -551,15 +551,15 @@ export default function PosPage() {
               <div className="pt-1 space-y-1 text-[11px]">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>${completedSale.subtotal.toFixed(2)}</span>
+                  <span>₹{completedSale.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax (8%):</span>
-                  <span>${completedSale.tax.toFixed(2)}</span>
+                  <span>₹{completedSale.tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-xs pt-1 border-t border-zinc-300">
                   <span>TOTAL:</span>
-                  <span>${completedSale.total.toFixed(2)}</span>
+                  <span>₹{completedSale.total.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -568,7 +568,7 @@ export default function PosPage() {
                 {completedSale.payments.map((p: any, idx: number) => (
                   <div key={idx} className="flex justify-between">
                     <span>{p.method}:</span>
-                    <span>${Number(p.amount).toFixed(2)}</span>
+                    <span>₹{Number(p.amount).toFixed(2)}</span>
                   </div>
                 ))}
               </div>

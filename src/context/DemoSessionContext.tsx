@@ -16,14 +16,29 @@ export interface DemoSessionState {
   setStore: (storeId: string, storeName: string) => void;
 }
 
+export const ORG_LIST = [
+  { id: "org_01", name: "Apex Supermarket & Grocery", sector: "Supermarket / FMCG Retail" },
+  { id: "org_02", name: "Vogue Fashion Hub", sector: "Ethnic & Western Apparel Boutique" },
+  { id: "org_03", name: "Volt Consumer Electronics", sector: "Smartphones & Consumer Electronics" },
+];
+
+export const ROLE_PROFILES: Record<UserRole, { name: string; email: string }> = {
+  super_admin: { name: "Vikramaditya Roy", email: "superadmin@retailpilot.ai" },
+  business_owner: { name: "Purnima Verma", email: "purnima.owner@apexsupermarket.in" },
+  store_manager: { name: "Rahul Mehra", email: "rahul.manager@apexsupermarket.in" },
+  sales_staff: { name: "Priya Patel", email: "priya.pos@apexsupermarket.in" },
+  inventory_staff: { name: "Amitabh Joshi", email: "amitabh.stock@apexsupermarket.in" },
+  customer: { name: "Sneha Reddy", email: "sneha.customer@example.com" },
+};
+
 const DEFAULT_SESSION: DemoSessionState = {
   role: "business_owner",
-  name: "Elena Rostova",
+  name: "Purnima Verma",
   organizationId: "org_01",
   organizationName: "Apex Supermarket & Grocery",
   storeId: "store_01_main",
-  storeName: "Apex Downtown Superstore",
-  email: "elena.owner@apexsupermarket.com",
+  storeName: "Apex Connaught Place MegaStore, Delhi",
+  email: "purnima.owner@apexsupermarket.in",
   setRole: () => {},
   setOrganization: () => {},
   setStore: () => {},
@@ -31,30 +46,14 @@ const DEFAULT_SESSION: DemoSessionState = {
 
 const DemoSessionContext = createContext<DemoSessionState>(DEFAULT_SESSION);
 
-export const ORG_LIST = [
-  { id: "org_01", name: "Apex Supermarket & Grocery", sector: "Supermarket / Grocery" },
-  { id: "org_02", name: "Vogue Fashion Hub", sector: "Fashion & Apparel Boutique" },
-  { id: "org_03", name: "Volt Consumer Electronics", sector: "Consumer Electronics & Tech" },
-];
-
-export const ROLE_PROFILES: Record<UserRole, { name: string; email: string }> = {
-  super_admin: { name: "Alexander Vance", email: "superadmin@retailpilot.ai" },
-  business_owner: { name: "Elena Rostova", email: "elena.owner@apexsupermarket.com" },
-  store_manager: { name: "Marcus Chen", email: "marcus.manager@apexsupermarket.com" },
-  sales_staff: { name: "Sarah Jenkins", email: "sarah.pos@apexsupermarket.com" },
-  inventory_staff: { name: "David Miller", email: "david.stock@apexsupermarket.com" },
-  customer: { name: "Sophia Martinez", email: "sophia.customer@example.com" },
-};
-
 export function DemoSessionProvider({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<UserRole>("business_owner");
   const [organizationId, setOrgIdState] = useState<string>("org_01");
   const [organizationName, setOrgNameState] = useState<string>("Apex Supermarket & Grocery");
   const [storeId, setStoreIdState] = useState<string>("store_01_main");
-  const [storeName, setStoreNameState] = useState<string>("Apex Downtown Superstore");
+  const [storeName, setStoreNameState] = useState<string>("Apex Connaught Place MegaStore, Delhi");
 
   useEffect(() => {
-    // Load from localStorage if present
     try {
       const savedRole = localStorage.getItem("retailpilot_role") as UserRole;
       const savedOrg = localStorage.getItem("retailpilot_org");

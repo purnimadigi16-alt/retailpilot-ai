@@ -68,7 +68,7 @@ export default function CustomerPortalPage() {
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider block">Loyalty Points Balance</span>
             <span className="font-mono text-xl font-extrabold">{customer.loyalty_points} Points</span>
-            <span className="text-[10px] text-muted-foreground block font-medium">(${(customer.loyalty_points / 10).toFixed(2)} Store Credit)</span>
+            <span className="text-[10px] text-muted-foreground block font-medium">(₹{(customer.loyalty_points / 10).toFixed(2)} Store Credit)</span>
           </div>
         </div>
       </div>
@@ -94,7 +94,7 @@ export default function CustomerPortalPage() {
           </div>
           <h3 className="font-bold text-sm text-foreground">Double Points on Fresh Organics</h3>
           <p className="text-xs text-muted-foreground">
-            Earn 2x loyalty points per $1 spent on all fresh farm produce and whole foods this month.
+            Earn 2x loyalty points per ₹10 spent on all fresh farm produce and dairy this month.
           </p>
           <span className="inline-block rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold">
             ACTIVE MEMBER PERK
@@ -138,7 +138,7 @@ export default function CustomerPortalPage() {
                       {(inv.sale_items || []).map((i: any) => `${i.quantity}x ${i.products?.name || "Item"}`).join(", ") || "Order items"}
                     </td>
                     <td className="p-3 text-right font-mono font-bold text-foreground">
-                      ${Number(inv.total).toFixed(2)}
+                      ₹{Number(inv.total).toFixed(2)}
                     </td>
                     <td className="p-3 text-center">
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold">

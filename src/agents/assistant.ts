@@ -119,35 +119,35 @@ export async function runRetailPilotAssistant(
     } else if (selectedTool === "get_dead_stock") {
       const items = result as any[];
       const totalDeadValue = items.reduce((acc, curr) => acc + curr.dead_capital_tied_up, 0);
-      reply = `### 🧊 Dead Stock & Stagnant Capital Diagnostic\n\nIdentified **${items.length} high-value product line(s)** with zero sales over the past 60+ days, tying up **$${totalDeadValue.toFixed(2)}** in working capital:\n\n` +
+      reply = `### 🧊 Dead Stock & Stagnant Capital Diagnostic\n\nIdentified **${items.length} high-value product line(s)** with zero sales over the past 60+ days, tying up **₹${totalDeadValue.toFixed(2)}** in working capital:\n\n` +
         `| SKU | Product Name | Unsold Units | Unit Cost | Tied-Up Capital | Recommended Markdown |\n` +
         `| :--- | :--- | :---: | :---: | :---: | :---: |\n` +
         items
           .map(
             (i) =>
-              `| \`${i.sku}\` | ${i.name} | ${i.current_stock} | $${i.cost_price.toFixed(2)} | **$${i.dead_capital_tied_up.toFixed(2)}** | **${i.recommended_markdown_pct}% OFF** |`
+              `| \`${i.sku}\` | ${i.name} | ${i.current_stock} | ₹${i.cost_price.toFixed(2)} | **₹${i.dead_capital_tied_up.toFixed(2)}** | **${i.recommended_markdown_pct}% OFF** |`
           )
           .join("\n") +
         `\n\n**Strategic Recommendation:** Launch a flash clearance markdown to liquidate stagnant inventory and reinvest liberated cash flow into top-velocity SKUs.`;
     } else if (selectedTool === "get_profitability") {
       const p = result as any;
       reply = `### 📊 Live Store Financial P&L Breakdown\n\n` +
-        `- **Gross Sales Revenue:** $${p.gross_sales.toFixed(2)}\n` +
-        `- **Cost of Goods Sold (COGS):** -$${p.cogs.toFixed(2)}\n` +
-        `- **Gross Profit:** **$${p.gross_profit.toFixed(2)}** (${p.gross_margin_pct}% Gross Margin)\n` +
-        `- **Operating Expenses (Rent, Utilities, Payroll):** -$${p.operating_expenses.toFixed(2)}\n` +
-        `- **Net Operating Profit:** **$${p.net_profit.toFixed(2)}** (${p.net_margin_pct}% Net Margin)\n\n` +
+        `- **Gross Sales Revenue:** ₹${p.gross_sales.toFixed(2)}\n` +
+        `- **Cost of Goods Sold (COGS):** -₹${p.cogs.toFixed(2)}\n` +
+        `- **Gross Profit:** **₹${p.gross_profit.toFixed(2)}** (${p.gross_margin_pct}% Gross Margin)\n` +
+        `- **Operating Expenses (Rent, Utilities, Payroll):** -₹${p.operating_expenses.toFixed(2)}\n` +
+        `- **Net Operating Profit:** **₹${p.net_profit.toFixed(2)}** (${p.net_margin_pct}% Net Margin)\n\n` +
         `**Assessment:** Store operations are ${p.net_profit >= 0 ? "operating with healthy positive margin contribution" : "running at an operating deficit requiring expense rationalization"}.`;
     } else if (selectedTool === "get_supplier_outstanding") {
       const list = result as any[];
       const totalDue = list.reduce((acc, curr) => acc + curr.outstanding_balance, 0);
-      reply = `### 🏢 Accounts Payable & Supplier Aging Summary\n\nTotal outstanding payables: **$${totalDue.toFixed(2)}** across **${list.length} suppliers**:\n\n` +
+      reply = `### 🏢 Accounts Payable & Supplier Aging Summary\n\nTotal outstanding payables: **₹${totalDue.toFixed(2)}** across **${list.length} suppliers**:\n\n` +
         `| Supplier Name | Credit Terms | Total Balance | Overdue (Est.) | Due Status |\n` +
         `| :--- | :---: | :---: | :---: | :---: |\n` +
         list
           .map(
             (s) =>
-              `| **${s.name}** | ${s.credit_days} Days | $${s.outstanding_balance.toFixed(2)} | $${s.overdue_amount.toFixed(2)} | \`${s.due_status}\` |`
+              `| **${s.name}** | ${s.credit_days} Days | ₹${s.outstanding_balance.toFixed(2)} | ₹${s.overdue_amount.toFixed(2)} | \`${s.due_status}\` |`
           )
           .join("\n") +
         `\n\n**Accounts Escalation Notice:** Prioritize suppliers marked \`CRITICAL_DUE\` to maintain credit health and prevent shipment holds.`;
@@ -155,13 +155,13 @@ export async function runRetailPilotAssistant(
       const rep = result as any;
       reply = `### 📑 Executive Retail Diagnostic Dossier (${rep.period_month})\n\n` +
         `#### Key Operational Metrics\n` +
-        `- **Total Gross Revenue:** $${rep.total_revenue.toFixed(2)}\n` +
-        `- **COGS & Direct Costs:** $${rep.total_cogs.toFixed(2)}\n` +
-        `- **Gross Margin:** $${rep.gross_profit.toFixed(2)}\n` +
-        `- **Operating Overhead:** $${rep.total_expenses.toFixed(2)}\n` +
-        `- **Net Bottom-Line Profit:** **$${rep.net_profit.toFixed(2)}**\n` +
-        `- **Active Inventory Valuation:** $${rep.inventory_valuation.toFixed(2)}\n` +
-        `- **Dead Capital at Risk:** $${rep.dead_stock_value.toFixed(2)}\n\n` +
+        `- **Total Gross Revenue:** ₹${rep.total_revenue.toFixed(2)}\n` +
+        `- **COGS & Direct Costs:** ₹${rep.total_cogs.toFixed(2)}\n` +
+        `- **Gross Margin:** ₹${rep.gross_profit.toFixed(2)}\n` +
+        `- **Operating Overhead:** ₹${rep.total_expenses.toFixed(2)}\n` +
+        `- **Net Bottom-Line Profit:** **₹${rep.net_profit.toFixed(2)}**\n` +
+        `- **Active Inventory Valuation:** ₹${rep.inventory_valuation.toFixed(2)}\n` +
+        `- **Dead Capital at Risk:** ₹${rep.dead_stock_value.toFixed(2)}\n\n` +
         `#### Executive Insights & Directives\n` +
         rep.executive_insights.map((ins: string) => `- ${ins}`).join("\n");
     }

@@ -38,7 +38,7 @@ export async function runDeadStockAuditAutomation(
   }));
 
   if (deadItems.length > 0) {
-    const title = `🧊 Bi-Weekly Dead Stock Audit: $${totalDeadCapital.toFixed(2)} Stagnant Capital`;
+    const title = `🧊 Bi-Weekly Dead Stock Audit: ₹${totalDeadCapital.toFixed(2)} Stagnant Capital`;
     const message = `Identified ${deadItems.length} stagnant SKUs with 60+ days zero sales. Recommended markdown liquidation promotions generated.`;
     await createNotification(organizationId, title, message);
 

@@ -1,39 +1,30 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDemoSession } from "@/context/DemoSessionContext";
-import {
-  DollarSign,
-  Plus,
-  TrendingDown,
-  Building,
-  Calendar,
-  Layers,
-  PieChart as PieIcon,
-} from "lucide-react";
+import { DollarSign, Plus, Receipt, Calendar } from "lucide-react";
 
 export default function ExpensesPage() {
   const { organizationId, storeId, storeName } = useDemoSession();
-
   const [expenses, setExpenses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
-  const [category, setCategory] = useState<any>("Rent");
-  const [amount, setAmount] = useState<number>(0);
+  const [category, setCategory] = useState("Rent");
+  const [amount, setAmount] = useState<number | "">("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchExpenses();
+    loadExpenses();
   }, [organizationId, storeId]);
 
-  async function fetchExpenses() {
+  async function loadExpenses() {
     setLoading(true);
     try {
       const res = await fetch(`/api/expenses?organization_id=${organizationId}`);
-      const json = await res.json();
-      if (json.data) setExpenses(json.data);
+      const data = await res.json();
+      setExpenses(data.expenses || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -43,8 +34,7 @@ export default function ExpensesPage() {
 
   async function handleCreateExpense(e: React.FormEvent) {
     e.preventDefault();
-    if (!amount || !category) return;
-
+    if (!amount || Number(amount) <= 0) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/expenses", {
@@ -58,14 +48,14 @@ export default function ExpensesPage() {
           notes,
         }),
       });
-
-      if (!res.ok) throw new Error("Failed to log expense");
-      setShowModal(false);
-      setAmount(0);
-      setNotes("");
-      fetchExpenses();
-    } catch (err: any) {
-      alert(err.message);
+      if (res.ok) {
+        setShowModal(false);
+        setAmount("");
+        setNotes("");
+        loadExpenses();
+      }
+    } catch (err) {
+      console.error(err);
     } finally {
       setSubmitting(false);
     }
@@ -75,25 +65,26 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-blue-500" />
-            <h1 className="text-xl font-bold text-foreground">Store Operating Expenses (Overhead P&L)</h1>
+            <Receipt className="h-5 w-5 text-red-500" />
+            <h1 className="text-xl font-bold text-foreground">Operating Expenses & Store P&L</h1>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Track fixed and variable retail store overheads deducted directly from gross margins
+            Log store overhead (Rent, Utilities, Staff Wages, Marketing) for real-time net margin calculations
           </p>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <span className="text-[11px] text-muted-foreground block">Total Overhead Recorded</span>
-            <span className="font-mono font-bold text-base text-foreground">
-              ${totalExpense.toFixed(2)}
+            <span className="text-[11px] text-muted-foreground block">Total Overhead Logged</span>
+            <span className="font-mono font-bold text-base text-red-600 dark:text-red-400">
+              ₹{totalExpense.toFixed(2)}
             </span>
           </div>
+
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow hover:bg-blue-500 transition"
@@ -135,7 +126,7 @@ export default function ExpensesPage() {
                   </td>
                   <td className="p-3.5 text-muted-foreground">{e.stores?.name || storeName}</td>
                   <td className="p-3.5 text-right font-mono font-bold text-red-600 dark:text-red-400">
-                    -${Number(e.amount).toFixed(2)}
+                    -₹{Number(e.amount).toFixed(2)}
                   </td>
                   <td className="p-3.5 text-muted-foreground">{e.notes || "—"}</td>
                 </tr>
@@ -180,7 +171,7 @@ export default function ExpensesPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">Amount ($)</label>
+              <label className="text-xs font-semibold text-foreground block mb-1">Amount (₹)</label>
               <input
                 type="number"
                 step="0.01"

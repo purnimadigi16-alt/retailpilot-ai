@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     if (Math.abs(paymentsTotal - finalTotal) > 0.05 && payments.length > 0) {
       return NextResponse.json(
         {
-          error: `Payment amount mismatch: payments total ($${paymentsTotal.toFixed(2)}) must equal invoice total ($${finalTotal.toFixed(2)})`,
+          error: `Payment amount mismatch: payments total (₹${paymentsTotal.toFixed(2)}) must equal invoice total (₹${finalTotal.toFixed(2)})`,
         },
         { status: 422 }
       );

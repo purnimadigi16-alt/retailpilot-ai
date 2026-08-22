@@ -236,8 +236,8 @@ export default function InventoryPage() {
                         <span className="font-mono text-[10px] text-muted-foreground">{p.barcode}</span>
                       </td>
                       <td className="p-3.5 font-medium text-foreground">{p.name}</td>
-                      <td className="p-3.5 text-right font-mono text-muted-foreground">${Number(p.cost_price).toFixed(2)}</td>
-                      <td className="p-3.5 text-right font-mono font-semibold text-foreground">${Number(p.selling_price).toFixed(2)}</td>
+                      <td className="p-3.5 text-right font-mono text-muted-foreground">₹{Number(p.cost_price).toFixed(2)}</td>
+                      <td className="p-3.5 text-right font-mono font-semibold text-foreground">₹{Number(p.selling_price).toFixed(2)}</td>
                       <td className="p-3.5 text-center text-muted-foreground">{p.reorder_level ?? 10}</td>
                       <td className="p-3.5 text-center">
                         <span className={`inline-flex items-center gap-1 font-mono font-bold px-2.5 py-0.5 rounded-full ${
@@ -248,7 +248,7 @@ export default function InventoryPage() {
                           {stock} units
                         </span>
                       </td>
-                      <td className="p-3.5 text-right font-mono font-bold text-foreground">${valuation.toFixed(2)}</td>
+                      <td className="p-3.5 text-right font-mono font-bold text-foreground">₹{valuation.toFixed(2)}</td>
                       <td className="p-3.5 text-center">
                         <button
                           onClick={() => {

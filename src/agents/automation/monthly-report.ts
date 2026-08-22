@@ -24,7 +24,7 @@ export async function runMonthlyExecutiveReportAutomation(
 
   // 2. Push notification
   const title = `📑 Monthly Executive AI Report Ready (${periodMonth})`;
-  const message = `Monthly diagnostic compiled: Gross Revenue $${report.total_revenue.toFixed(2)}, Net Profit $${report.net_profit.toFixed(2)}, Inventory Valuation $${report.inventory_valuation.toFixed(2)}.`;
+  const message = `Monthly diagnostic compiled: Gross Revenue ₹${report.total_revenue.toFixed(2)}, Net Profit ₹${report.net_profit.toFixed(2)}, Inventory Valuation ₹${report.inventory_valuation.toFixed(2)}.`;
   await createNotification(organizationId, title, message);
 
   // 3. Persist to ai_reports table

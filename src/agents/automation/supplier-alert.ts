@@ -29,7 +29,7 @@ export async function runSupplierPaymentEscalation(
   for (const sup of escalated) {
     totalPending += sup.outstanding_balance;
     const title = `🚨 Supplier Payment Escalation: ${sup.name}`;
-    const message = `PO invoice payment ($${sup.outstanding_balance.toFixed(2)}) is due within 48 hours (Credit terms: ${sup.credit_days} days). Please review and release funds.`;
+    const message = `PO invoice payment (₹${sup.outstanding_balance.toFixed(2)}) is due within 48 hours (Credit terms: ${sup.credit_days} days). Please review and release funds.`;
     await createNotification(organizationId, title, message);
   }
 

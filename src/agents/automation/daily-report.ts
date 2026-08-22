@@ -76,7 +76,7 @@ export async function runDailySalesDossier(
 
   // Push notification to Owner
   const title = `📊 Daily End-of-Day Sales Dossier`;
-  const message = `Today's Gross Sales: $${grossRevenue.toFixed(2)} across ${(sales || []).length} orders. Refunds: $${refundsTotal.toFixed(2)}. Net Revenue: $${netRevenue.toFixed(2)}.`;
+  const message = `Today's Gross Sales: ₹${grossRevenue.toFixed(2)} across ${(sales || []).length} orders. Refunds: ₹${refundsTotal.toFixed(2)}. Net Revenue: ₹${netRevenue.toFixed(2)}.`;
   await createNotification(organizationId, title, message);
 
   // Store in ai_reports table

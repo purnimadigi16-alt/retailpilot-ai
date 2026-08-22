@@ -96,11 +96,12 @@ export default function SuppliersPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="text-right">
-            <span className="text-[11px] text-muted-foreground block">Total Payables Due</span>
-            <span className="font-mono font-bold text-base text-foreground">
-              ${totalOutstanding.toFixed(2)}
-            </span>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-1">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Accounts Payable</span>
+            <p className="text-2xl font-black font-mono text-red-600 dark:text-red-400">
+              ₹{totalOutstanding.toFixed(2)}
+            </p>
+            <span className="text-[11px] text-muted-foreground">Outstanding balances to vendors</span>
           </div>
           <button
             onClick={() => setShowModal(true)}
@@ -111,44 +112,36 @@ export default function SuppliersPage() {
         </div>
       </div>
 
-      {/* Supplier Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Suppliers Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {suppliers.map((s) => (
-          <div
-            key={s.id}
-            className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4 flex flex-col justify-between"
-          >
+          <div key={s.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4 flex flex-col justify-between hover:border-blue-500/50 transition">
             <div>
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] text-muted-foreground">{s.id}</span>
-                <span className="rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 text-[10px] font-bold">
+                <span className="font-bold text-foreground text-sm">{s.name}</span>
+                <span className="rounded-full bg-accent px-2.5 py-0.5 text-[10px] font-mono text-muted-foreground">
                   {s.credit_days} Days Credit
                 </span>
               </div>
-              <h3 className="text-sm font-bold text-foreground mt-1">{s.name}</h3>
 
-              <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                {s.phone && (
-                  <p className="flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {s.phone}
-                  </p>
-                )}
-                {s.email && (
-                  <p className="flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5 text-muted-foreground" /> {s.email}
-                  </p>
-                )}
+              <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>{s.phone || "No phone listed"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="truncate">{s.email || "No email listed"}</span>
+                </div>
               </div>
             </div>
 
             <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Outstanding Balance:</span>
+              <span className="text-muted-foreground">Outstanding:</span>
               <span className={`font-mono font-bold ${
-                Number(s.outstanding_balance) > 5000
-                  ? "text-red-600 dark:text-red-400"
-                  : "text-foreground"
+                Number(s.outstanding_balance || 0) > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600"
               }`}>
-                ${Number(s.outstanding_balance || 0).toFixed(2)}
+                ₹{Number(s.outstanding_balance || 0).toFixed(2)}
               </span>
             </div>
           </div>
@@ -216,7 +209,7 @@ export default function SuppliersPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-foreground block mb-1">Initial Balance ($)</label>
+                <label className="text-xs font-semibold text-foreground block mb-1">Initial Balance (₹)</label>
                 <input
                   type="number"
                   step="0.01"

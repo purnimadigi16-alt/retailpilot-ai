@@ -123,12 +123,15 @@ export default function DashboardPage() {
             </div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-foreground">
-              ${analytics?.revenue ? analytics.revenue.toFixed(2) : "0.00"}
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
-              <ArrowUpRight className="h-3.5 w-3.5" />
-              <span>COGS: ${analytics?.cogs ? analytics.cogs.toFixed(2) : "0.00"}</span>
+            <span className="text-2xl font-black tracking-tight text-foreground font-mono">
+              ₹{analytics?.revenue ? analytics.revenue.toFixed(2) : "0.00"}
+            </span>
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span>COGS: ₹{analytics?.cogs ? analytics.cogs.toFixed(2) : "0.00"}</span>
+              <span>•</span>
+              <span className="font-semibold text-emerald-600">
+                {analytics?.gross_margin ? analytics.gross_margin.toFixed(1) : 0}% Margin
+              </span>
             </div>
           </div>
         </div>
@@ -136,33 +139,37 @@ export default function DashboardPage() {
         {/* Net Profit & Margin */}
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Net Operating Profit</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600">
-              <TrendingUp className="h-4 w-4" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Net Operating Profit
+            </span>
+            <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+              <TrendingUp className="h-5 w-5" />
             </div>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-foreground">
-              ${analytics?.net_profit ? analytics.net_profit.toFixed(2) : "0.00"}
-            </div>
-            <div className="mt-1 flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
-              <span>{analytics?.net_margin_pct ?? 0}% Net Margin (Gross: {analytics?.gross_margin_pct ?? 0}%)</span>
-            </div>
+          <div className="space-y-1">
+            <span className="text-2xl font-black tracking-tight text-foreground font-mono">
+              ₹{analytics?.net_profit ? analytics.net_profit.toFixed(2) : "0.00"}
+            </span>
+            <p className="text-[11px] text-muted-foreground">
+              After OpEx deduction (₹{analytics?.expenses ? analytics.expenses.toFixed(2) : "0.00"})
+            </p>
           </div>
         </div>
 
         {/* Active Inventory Valuation */}
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock Valuation</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600">
-              <Boxes className="h-4 w-4" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Active Stock Valuation
+            </span>
+            <div className="rounded-xl bg-purple-500/10 p-2 text-purple-600 dark:text-purple-400">
+              <Boxes className="h-5 w-5" />
             </div>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-foreground">
-              ${analytics?.inventory_valuation ? analytics.inventory_valuation.toFixed(2) : "0.00"}
-            </div>
+          <div className="space-y-1">
+            <span className="text-2xl font-black tracking-tight text-foreground font-mono">
+              ₹{analytics?.inventory_valuation ? analytics.inventory_valuation.toFixed(2) : "0.00"}
+            </span>
             <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>{analytics?.total_inventory_units ?? 0} physical units in ledger</span>
             </div>
@@ -219,8 +226,8 @@ export default function DashboardPage() {
                 <Tooltip
                   contentStyle={{ backgroundColor: "#18181b", borderColor: "#27272a", borderRadius: "8px", fontSize: "12px" }}
                 />
-                <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" name="Gross Revenue ($)" />
-                <Area type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorProfit)" name="Gross Profit ($)" />
+                <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" name="Gross Revenue (₹)" />
+                <Area type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorProfit)" name="Gross Profit (₹)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -240,7 +247,7 @@ export default function DashboardPage() {
               Object.entries(analytics?.expense_breakdown || {}).map(([cat, amt]: [string, any]) => (
                 <div key={cat} className="flex items-center justify-between text-xs border-b border-border/50 pb-2">
                   <span className="font-medium text-foreground">{cat}</span>
-                  <span className="font-mono font-semibold">${Number(amt).toFixed(2)}</span>
+                  <span className="font-mono font-semibold">₹{Number(amt).toFixed(2)}</span>
                 </div>
               ))
             )}
@@ -248,7 +255,7 @@ export default function DashboardPage() {
 
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
             <span className="font-bold text-foreground">Total Overhead:</span>
-            <span className="font-mono font-bold text-foreground">${analytics?.expenses?.toFixed(2) ?? "0.00"}</span>
+            <span className="font-mono font-bold text-foreground">₹{analytics?.expenses?.toFixed(2) ?? "0.00"}</span>
           </div>
         </div>
       </div>

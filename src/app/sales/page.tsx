@@ -161,9 +161,9 @@ export default function SalesPage() {
                     <td className="p-3.5 text-muted-foreground">
                       {(s.sale_items || []).map((i: any) => `${i.quantity}x ${i.products?.name || "Item"}`).join(", ") || "—"}
                     </td>
-                    <td className="p-3.5 text-right font-mono text-muted-foreground">${Number(s.subtotal).toFixed(2)}</td>
-                    <td className="p-3.5 text-right font-mono text-muted-foreground">${Number(s.tax).toFixed(2)}</td>
-                    <td className="p-3.5 text-right font-mono font-bold text-foreground">${Number(s.total).toFixed(2)}</td>
+                    <td className="p-3.5 text-right font-mono text-muted-foreground">₹{Number(s.subtotal).toFixed(2)}</td>
+                    <td className="p-3.5 text-right font-mono text-muted-foreground">₹{Number(s.tax).toFixed(2)}</td>
+                    <td className="p-3.5 text-right font-mono font-bold text-foreground">₹{Number(s.total).toFixed(2)}</td>
                     <td className="p-3.5">
                       <div className="flex flex-wrap gap-1">
                         {(s.payments || []).map((p: any) => (
@@ -171,7 +171,7 @@ export default function SalesPage() {
                             key={p.id}
                             className="rounded bg-accent px-1.5 py-0.5 text-[10px] font-mono text-foreground font-medium"
                           >
-                            {p.method}: ${Number(p.amount).toFixed(2)}
+                            {p.method}: ₹{Number(p.amount).toFixed(2)}
                           </span>
                         ))}
                       </div>
@@ -280,7 +280,7 @@ export default function SalesPage() {
               >
                 {(selectedSale.sale_items || []).map((item: any) => (
                   <option key={item.product_id} value={item.product_id}>
-                    {item.products?.name || item.product_id} ({item.quantity} purchased @ ${item.selling_price})
+                    {item.products?.name || item.product_id} ({item.quantity} purchased @ ₹{item.selling_price})
                   </option>
                 ))}
               </select>

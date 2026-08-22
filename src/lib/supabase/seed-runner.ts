@@ -1,12 +1,20 @@
-import { runDatabaseSeed } from "./seed";
+import { seedDatabase } from "./seed";
 
 async function main() {
-  const result = await runDatabaseSeed();
-  console.log("Seed result:", result);
-  process.exit(result.success ? 0 : 1);
+  console.log("================================================================================");
+  console.log("         RETAILPILOT AI: SEEDING MULTI-TENANT DATABASE WITH INDIAN DATA         ");
+  console.log("================================================================================\n");
+
+  try {
+    await seedDatabase();
+    console.log("\n================================================================================");
+    console.log("  DATABASE SEEDING SUCCESSFUL!");
+    console.log("================================================================================\n");
+    process.exit(0);
+  } catch (error: any) {
+    console.error("\n❌ Fatal seed error:", error.message);
+    process.exit(1);
+  }
 }
 
-main().catch((err) => {
-  console.error("Fatal seed error:", err);
-  process.exit(1);
-});
+main();

@@ -177,7 +177,7 @@ export default function PurchasesPage() {
                   </td>
                   <td className="p-3.5 text-muted-foreground">{po.stores?.name || storeName}</td>
                   <td className="p-3.5 text-right font-mono font-bold text-foreground">
-                    ${Number(po.total_amount).toFixed(2)}
+                    ₹{Number(po.total_amount).toFixed(2)}
                   </td>
                   <td className="p-3.5 text-center">
                     <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${

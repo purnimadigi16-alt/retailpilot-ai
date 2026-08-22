@@ -21,29 +21,38 @@ export default function SuperAdminPage() {
     {
       id: "org_01",
       name: "Apex Supermarket & Grocery",
+      slug: "apex-supermarket",
       tier: "Enterprise Pro",
       storesCount: 2,
-      productsCount: 7,
-      status: "ACTIVE",
-      monthlyUsage: "$189/mo",
+      usersCount: 6,
+      productsCount: 420,
+      monthlyUsage: "₹14,999/mo",
+      status: "Active",
+      createdDate: "01-Jan-2026",
     },
     {
       id: "org_02",
       name: "Vogue Fashion Hub",
+      slug: "vogue-fashion",
       tier: "Growth Plan",
       storesCount: 2,
-      productsCount: 4,
-      status: "ACTIVE",
-      monthlyUsage: "$99/mo",
+      usersCount: 4,
+      productsCount: 180,
+      monthlyUsage: "₹7,999/mo",
+      status: "Active",
+      createdDate: "15-Jan-2026",
     },
     {
       id: "org_03",
       name: "Volt Consumer Electronics",
+      slug: "volt-electronics",
       tier: "Enterprise Pro",
       storesCount: 1,
-      productsCount: 3,
-      status: "ACTIVE",
-      monthlyUsage: "$189/mo",
+      usersCount: 3,
+      productsCount: 85,
+      monthlyUsage: "₹14,999/mo",
+      status: "Active",
+      createdDate: "01-Feb-2026",
     },
   ]);
 
@@ -59,11 +68,14 @@ export default function SuperAdminPage() {
     const created = {
       id: newId,
       name: newOrgName,
+      slug: newOrgName.toLowerCase().replace(/[^a-z0-9]/g, "-"),
       tier: newOrgTier,
       storesCount: 1,
+      usersCount: 1,
       productsCount: 0,
-      status: "ACTIVE",
-      monthlyUsage: newOrgTier === "Enterprise Pro" ? "$189/mo" : "$99/mo",
+      monthlyUsage: newOrgTier === "Enterprise Pro" ? "₹14,999/mo" : "₹7,999/mo",
+      status: "Active",
+      createdDate: new Date().toLocaleDateString(),
     };
 
     setTenants([...tenants, created]);
@@ -202,9 +214,9 @@ export default function SuperAdminPage() {
                 onChange={(e) => setNewOrgTier(e.target.value)}
                 className="w-full rounded-xl border border-border bg-background p-2 text-xs"
               >
-                <option value="Starter Plan">Starter Plan ($49/mo)</option>
-                <option value="Growth Plan">Growth Plan ($99/mo)</option>
-                <option value="Enterprise Pro">Enterprise Pro ($189/mo)</option>
+                <option value="Starter Plan">Starter Plan (₹3,999/mo)</option>
+                <option value="Growth Plan">Growth Plan (₹7,999/mo)</option>
+                <option value="Enterprise Pro">Enterprise Pro (₹14,999/mo)</option>
               </select>
             </div>
 

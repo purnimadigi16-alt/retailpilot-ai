@@ -57,6 +57,10 @@ export const adminDb = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
   auth: { persistSession: false },
 });
 
+export function getSupabaseAdmin() {
+  return adminDb;
+}
+
 export function getScopedDb(orgId?: string) {
   return adminDb;
 }
