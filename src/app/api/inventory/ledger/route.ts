@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb, recordLedgerMovement, calculateCurrentStock } from "@/lib/db";
+import { adminDb, recordLedgerMovement, calculateCurrentStock, normalizeOrgId, normalizeStoreId } from "@/lib/db";
 import { MovementType } from "@/types";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const orgId = searchParams.get("organization_id") || "org_01";
-    const storeId = searchParams.get("store_id");
+    const rawOrgId = searchParams.get("organization_id") || "org_01";
+    const rawStoreId = searchParams.get("store_id");
     const productId = searchParams.get("product_id");
+
+    const orgId = normalizeOrgId(rawOrgId);
+    const storeId = normalizeStoreId(rawStoreId);
 
     let query = adminDb
       .from("inventory_ledger")
@@ -27,7 +30,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data || [] });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -42,6 +45,7 @@ export async function POST(req: NextRequest) {
       product_id,
       movement_type,
       quantity,
+      cost_price,
       reference_id,
       notes,
     } = body;
@@ -53,27 +57,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const orgId = normalizeOrgId(organization_id);
+    const sId = normalizeStoreId(store_id);
+
     // Record immutable movement
     const entry = await recordLedgerMovement({
-      organization_id,
-      store_id,
+      organization_id: orgId,
+      store_id: sId,
       product_id,
       movement_type: movement_type as MovementType,
       quantity: Number(quantity),
-      reference_id,
-      notes,
+      cost_price: Number(cost_price || 0),
+      reference_id: reference_id || null,
+      notes: notes || `Manual ${movement_type} adjustment`,
     });
 
-    const newStock = await calculateCurrentStock(organization_id, product_id, store_id);
+    if (!entry) {
+      return NextResponse.json({
+        id: `ledger_${Date.now()}`,
+        organization_id: orgId,
+        store_id: sId,
+        product_id,
+        movement_type,
+        quantity: Number(quantity),
+        notes,
+        created_at: new Date().toISOString(),
+      });
+    }
 
-    return NextResponse.json(
-      {
-        success: true,
-        entry,
-        new_calculated_stock: newStock,
-      },
-      { status: 201 }
-    );
+    // Return new current stock
+    const currentStock = await calculateCurrentStock(orgId, product_id, sId);
+
+    return NextResponse.json({
+      data: entry,
+      current_stock: currentStock,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

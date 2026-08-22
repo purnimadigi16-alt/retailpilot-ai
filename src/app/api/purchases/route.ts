@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb, recordLedgerMovement } from "@/lib/db";
+import { adminDb, recordLedgerMovement, normalizeOrgId, normalizeStoreId } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const orgId = searchParams.get("organization_id") || "org_01";
+    const rawOrgId = searchParams.get("organization_id") || "org_01";
+    const orgId = normalizeOrgId(rawOrgId);
 
     const { data, error } = await adminDb
       .from("purchases")
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data || [] });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -41,6 +42,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const orgId = normalizeOrgId(organization_id);
+    const sId = normalizeStoreId(store_id);
+
     const totalAmount = items.reduce(
       (acc: number, item: any) => acc + Number(item.quantity) * Number(item.unit_cost),
       0
@@ -53,12 +57,12 @@ export async function POST(req: NextRequest) {
       .from("purchases")
       .insert([
         {
-          organization_id,
-          store_id,
+          organization_id: orgId,
+          store_id: sId || null,
           supplier_id,
           po_number: generatedPoNumber,
           status,
-          total_amount: Number(totalAmount.toFixed(2)),
+          total_amount: totalAmount,
         },
       ])
       .select()
@@ -68,7 +72,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: poErr.message }, { status: 500 });
     }
 
-    // 2. Insert items
+    // 2. Insert PO items
     const poItemsPayload = items.map((i: any) => ({
       purchase_id: po.id,
       product_id: i.product_id,
@@ -79,22 +83,23 @@ export async function POST(req: NextRequest) {
 
     await adminDb.from("purchase_items").insert(poItemsPayload);
 
-    // 3. If PO status is "Received" (GRN processed), add inventory to ledger!
+    // 3. If immediately marked "Received", add positive stock movement in ledger
     if (status === "Received") {
       for (const item of items) {
         await recordLedgerMovement({
-          organization_id,
-          store_id,
+          organization_id: orgId,
+          store_id: sId,
           product_id: item.product_id,
           movement_type: "PURCHASE",
           quantity: Math.abs(Number(item.quantity)),
+          cost_price: Number(item.unit_cost),
           reference_id: po.id,
-          notes: `PO Goods Receipt Note (GRN) received: ${generatedPoNumber}`,
+          notes: `GRN Intake from PO ${generatedPoNumber}`,
         });
       }
     }
 
-    return NextResponse.json({ success: true, purchase: po }, { status: 201 });
+    return NextResponse.json({ data: po }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -103,51 +108,52 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, status } = body;
+    const { purchase_id, status } = body;
 
-    if (!id || !status) {
-      return NextResponse.json({ error: "Missing PO id or new status" }, { status: 400 });
+    if (!purchase_id || !status) {
+      return NextResponse.json({ error: "Missing purchase_id or status" }, { status: 400 });
     }
 
-    // Fetch existing PO
-    const { data: existingPo, error: fErr } = await adminDb
+    // Fetch PO and items
+    const { data: po, error: fetchErr } = await adminDb
       .from("purchases")
-      .select("*, purchase_items ( product_id, quantity )")
-      .eq("id", id)
+      .select("*, purchase_items (*)")
+      .eq("id", purchase_id)
       .single();
 
-    if (fErr || !existingPo) {
-      return NextResponse.json({ error: "Purchase Order not found" }, { status: 404 });
+    if (fetchErr || !po) {
+      return NextResponse.json({ error: "Purchase order not found" }, { status: 404 });
     }
 
-    // If moving to "Received", credit inventory ledger
-    if (status === "Received" && existingPo.status !== "Received") {
-      const items = (existingPo as any).purchase_items || [];
-      for (const item of items) {
+    // If transitioning to "Received", add stock movements in ledger
+    if (status === "Received" && po.status !== "Received") {
+      for (const item of po.purchase_items || []) {
         await recordLedgerMovement({
-          organization_id: existingPo.organization_id,
-          store_id: existingPo.store_id,
+          organization_id: po.organization_id,
+          store_id: po.store_id,
           product_id: item.product_id,
           movement_type: "PURCHASE",
           quantity: Math.abs(Number(item.quantity)),
-          reference_id: existingPo.id,
-          notes: `GRN received status update for ${existingPo.po_number}`,
+          cost_price: Number(item.unit_cost),
+          reference_id: po.id,
+          notes: `GRN Receipt Intake for PO ${po.po_number}`,
         });
       }
     }
 
-    const { data: updated, error: uErr } = await adminDb
+    // Update status
+    const { data: updated, error: updateErr } = await adminDb
       .from("purchases")
       .update({ status })
-      .eq("id", id)
+      .eq("id", purchase_id)
       .select()
       .single();
 
-    if (uErr) {
-      return NextResponse.json({ error: uErr.message }, { status: 500 });
+    if (updateErr) {
+      return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, purchase: updated });
+    return NextResponse.json({ data: updated });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

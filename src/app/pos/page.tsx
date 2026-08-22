@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useDemoSession } from "@/context/DemoSessionContext";
+import { Product } from "@/types";
 import {
-  Search,
-  Barcode,
   ShoppingCart,
+  Barcode,
+  Search,
   Plus,
   Minus,
   Trash2,
@@ -13,13 +14,14 @@ import {
   Banknote,
   QrCode,
   Award,
+  CheckCircle,
   Printer,
-  CheckCircle2,
-  AlertCircle,
-  Receipt,
+  Sparkles,
+  Layers,
+  ShoppingBag,
 } from "lucide-react";
 
-export interface CartItem {
+interface CartItem {
   product_id: string;
   sku: string;
   name: string;
@@ -27,16 +29,19 @@ export interface CartItem {
   selling_price: number;
   quantity: number;
   current_stock: number;
+  category?: string;
 }
 
 export default function PosPage() {
-  const { organizationId, storeId, organizationName, storeName } = useDemoSession();
+  const { organizationId, organizationName, storeId, storeName } = useDemoSession();
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [barcodeInput, setBarcodeInput] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("ALL");
+
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [discountAmount, setDiscountAmount] = useState(0);
 
   // Split payments state
@@ -59,12 +64,17 @@ export default function PosPage() {
   }, [organizationId, storeId]);
 
   async function fetchProducts() {
+    setLoading(true);
     try {
       const res = await fetch(`/api/products?organization_id=${organizationId}`);
       const json = await res.json();
-      if (json.data) setProducts(json.data);
+      if (json.data && json.data.length > 0) {
+        setProducts(json.data);
+      }
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -83,7 +93,9 @@ export default function PosPage() {
     if (!barcodeInput.trim()) return;
 
     const matched = products.find(
-      (p) => p.barcode === barcodeInput.trim() || p.sku.toLowerCase() === barcodeInput.trim().toLowerCase()
+      (p) =>
+        p.barcode === barcodeInput.trim() ||
+        p.sku.toLowerCase() === barcodeInput.trim().toLowerCase()
     );
 
     if (matched) {
@@ -112,6 +124,7 @@ export default function PosPage() {
           selling_price: Number(p.selling_price),
           quantity: 1,
           current_stock: p.current_stock ?? 0,
+          category: p.category,
         },
       ];
     });
@@ -150,13 +163,18 @@ export default function PosPage() {
   }
 
   const enteredPaymentsTotal = Number(
-    (Number(cashAmount || 0) + Number(cardAmount || 0) + Number(upiAmount || 0) + Number(pointsAmount || 0)).toFixed(2)
+    (
+      Number(cashAmount || 0) +
+      Number(cardAmount || 0) +
+      Number(upiAmount || 0) +
+      Number(pointsAmount || 0)
+    ).toFixed(2)
   );
   const paymentRemaining = Number((finalTotal - enteredPaymentsTotal).toFixed(2));
 
   async function handleCompleteCheckout() {
     if (Math.abs(paymentRemaining) > 0.05) {
-      alert(`Payment total ($${enteredPaymentsTotal}) must equal invoice total ($${finalTotal})`);
+      alert(`Payment total (₹${enteredPaymentsTotal}) must equal invoice total (₹${finalTotal})`);
       return;
     }
 
@@ -214,21 +232,32 @@ export default function PosPage() {
     }
   }
 
+  // Extract unique categories
+  const categories = ["All", ...Array.from(new Set(products.map((p) => p.category || "General").filter(Boolean)))];
+
   const filteredProducts = products.filter((p) => {
     const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+      p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.barcode.includes(searchQuery);
+
+    const matchesCategory =
+      selectedCategory === "All" || (p.category || "General") === selectedCategory;
+
+    return matchesSearch && matchesCategory;
   });
 
   return (
     <div className="space-y-6">
       {/* POS Top Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
         <div>
-          <h1 className="text-xl font-bold text-foreground">High-Speed POS Checkout Terminal</h1>
-          <p className="text-xs text-muted-foreground">
-            {storeName} • Multi-payment split • Instant stock deduction via ledger
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5 text-blue-500" />
+            <h1 className="text-xl font-bold text-foreground">High-Speed POS Checkout Terminal</h1>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {organizationName} • {storeName} • Instant ledger stock sync
           </p>
         </div>
 
@@ -238,7 +267,7 @@ export default function PosPage() {
             <Barcode className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Scan Barcode / SKU + Enter..."
+              placeholder="Scan Barcode / SKU (e.g. 8901001001) + Enter..."
               value={barcodeInput}
               onChange={(e) => setBarcodeInput(e.target.value)}
               className="w-64 sm:w-80 rounded-xl border border-border bg-background pl-9 pr-4 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -248,7 +277,7 @@ export default function PosPage() {
             type="submit"
             className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-500 transition"
           >
-            Add SKU
+            Add Barcode
           </button>
         </form>
       </div>
@@ -257,71 +286,137 @@ export default function PosPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Product Catalog Picker (2 cols) */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          {/* Search and Category Filter */}
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search products by title or code..."
+                placeholder="Search catalog by name, SKU, or barcode..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-border bg-card pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            {/* Category Chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`rounded-xl px-3 py-1.5 font-semibold text-xs whitespace-nowrap transition ${
+                    selectedCategory === cat
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "bg-accent/60 text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto pr-1">
-            {filteredProducts.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => addToCart(p)}
-                className="flex flex-col justify-between text-left rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-blue-500/50 hover:shadow-md transition group"
-              >
-                <div>
-                  <span className="text-[10px] font-mono text-muted-foreground">{p.sku}</span>
-                  <h3 className="text-xs font-bold text-foreground mt-0.5 line-clamp-2 group-hover:text-blue-500 transition">
-                    {p.name}
-                  </h3>
-                </div>
-                <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/50">
-                  <span className="text-sm font-extrabold text-foreground">${Number(p.selling_price).toFixed(2)}</span>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                    (p.current_stock ?? 0) <= (p.reorder_level ?? 10)
-                      ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
-                      : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-                  }`}>
-                    Stock: {p.current_stock ?? 0}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
+          {/* Product Cards Grid */}
+          {loading && products.length === 0 ? (
+            <div className="py-16 text-center text-xs text-muted-foreground">
+              Loading product catalog...
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center text-xs text-muted-foreground">
+              <ShoppingBag className="mx-auto h-8 w-8 text-muted-foreground/40 mb-2" />
+              No products found matching &ldquo;{searchQuery}&rdquo;.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[620px] overflow-y-auto pr-1">
+              {filteredProducts.map((p) => {
+                const isLow = (p.current_stock ?? 0) <= (p.reorder_level ?? 10);
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => addToCart(p)}
+                    className="flex flex-col justify-between text-left rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-blue-500/60 hover:shadow-md transition cursor-pointer group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="text-[10px] font-mono text-muted-foreground font-semibold">
+                          {p.sku}
+                        </span>
+                        <span className="rounded-md bg-accent px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
+                          {p.category || "General"}
+                        </span>
+                      </div>
+                      <h3 className="text-xs font-bold text-foreground line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                        {p.name}
+                      </h3>
+                      <span className="text-[10px] font-mono text-muted-foreground block mt-0.5">
+                        Code: {p.barcode}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block">Price</span>
+                        <span className="text-sm font-black font-mono text-foreground">
+                          ₹{Number(p.selling_price).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`inline-block text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                            isLow
+                              ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
+                              : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                          }`}
+                        >
+                          {p.current_stock ?? 0} in stock
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Live Cart & Summary (1 col) */}
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm flex flex-col justify-between h-full min-h-[550px]">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm flex flex-col justify-between h-full min-h-[580px]">
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4 text-blue-500" />
                 <span className="font-bold text-sm text-foreground">Active Order Cart</span>
               </div>
-              <span className="rounded-full bg-blue-100 dark:bg-blue-950 px-2.5 py-0.5 text-xs font-bold text-blue-600">
-                {cart.reduce((acc, curr) => acc + curr.quantity, 0)} items
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-blue-100 dark:bg-blue-950 px-2.5 py-0.5 text-xs font-bold text-blue-600 dark:text-blue-400">
+                  {cart.reduce((acc, curr) => acc + curr.quantity, 0)} items
+                </span>
+                {cart.length > 0 && (
+                  <button
+                    onClick={() => setCart([])}
+                    className="text-[11px] text-red-500 hover:underline"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Cart Items List */}
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1 divide-y divide-border/40">
+            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1 divide-y divide-border/40">
               {cart.length === 0 ? (
-                <div className="py-12 text-center text-xs text-muted-foreground">
-                  <ShoppingCart className="mx-auto h-8 w-8 text-muted-foreground/40 mb-2" />
-                  Cart is empty. Click a product or scan a barcode.
+                <div className="py-16 text-center text-xs text-muted-foreground space-y-2">
+                  <ShoppingCart className="mx-auto h-8 w-8 text-muted-foreground/30" />
+                  <p>Cart is currently empty.</p>
+                  <p className="text-[11px] text-muted-foreground/70">
+                    Click any product on the left or scan barcode to add.
+                  </p>
                 </div>
               ) : (
                 cart.map((item) => (
                   <div key={item.product_id} className="pt-2 flex items-center justify-between text-xs">
-                    <div className="max-w-[150px]">
+                    <div className="max-w-[140px]">
                       <p className="font-semibold text-foreground truncate">{item.name}</p>
                       <p className="text-[10px] text-muted-foreground font-mono">
                         ₹{item.selling_price.toFixed(2)} each
@@ -344,7 +439,7 @@ export default function PosPage() {
                           <Plus className="h-3 w-3" />
                         </button>
                       </div>
-                      <span className="font-mono font-bold text-xs w-12 text-right">
+                      <span className="font-mono font-bold text-xs w-14 text-right">
                         ₹{(item.selling_price * item.quantity).toFixed(2)}
                       </span>
                       <button
@@ -361,7 +456,7 @@ export default function PosPage() {
           </div>
 
           {/* Cart Pricing Calculations & Checkout Button */}
-          <div className="mt-4 pt-4 border-t border-border space-y-2 text-xs">
+          <div className="mt-4 pt-4 border-t border-border space-y-2.5 text-xs">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal:</span>
               <span className="font-mono font-semibold">₹{subtotal.toFixed(2)}</span>
@@ -371,7 +466,7 @@ export default function PosPage() {
               <span className="font-mono font-semibold">₹{tax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-muted-foreground items-center">
-              <span>Discount (₹):</span>
+              <span>Discount Voucher (₹):</span>
               <input
                 type="number"
                 min="0"
@@ -382,7 +477,7 @@ export default function PosPage() {
               />
             </div>
             <div className="flex justify-between text-base font-extrabold text-foreground pt-2 border-t border-border">
-              <span>Final Total:</span>
+              <span>Payable Total:</span>
               <span className="font-mono text-blue-600 dark:text-blue-400">₹{finalTotal.toFixed(2)}</span>
             </div>
 
@@ -403,7 +498,10 @@ export default function PosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-border">
-              <h2 className="font-bold text-base text-foreground">Split Payment & Settlement</h2>
+              <div>
+                <h2 className="font-bold text-base text-foreground">Split Payment & Settlement</h2>
+                <p className="text-xs text-muted-foreground">Select multiple payment channels</p>
+              </div>
               <span className="font-mono font-extrabold text-blue-600 dark:text-blue-400 text-lg">
                 ₹{finalTotal.toFixed(2)}
               </span>
@@ -411,13 +509,15 @@ export default function PosPage() {
 
             {/* Customer selector for loyalty points */}
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">Attach Customer (Loyalty Points)</label>
+              <label className="text-xs font-semibold text-foreground block mb-1">
+                Attach Customer (Loyalty Accrual)
+              </label>
               <select
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
                 className="w-full rounded-xl border border-border bg-background p-2 text-xs"
               >
-                <option value="">Guest Customer</option>
+                <option value="">Guest Walk-in Customer</option>
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} ({c.loyalty_points || 0} pts) - {c.phone}
@@ -427,7 +527,7 @@ export default function PosPage() {
             </div>
 
             {/* Split inputs */}
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between rounded-xl border border-border bg-background/60 p-2.5">
                 <div className="flex items-center gap-2 text-xs font-medium">
                   <Banknote className="h-4 w-4 text-emerald-500" /> Cash (₹)
@@ -469,7 +569,7 @@ export default function PosPage() {
 
               <div className="flex items-center justify-between rounded-xl border border-border bg-background/60 p-2.5">
                 <div className="flex items-center gap-2 text-xs font-medium">
-                  <Award className="h-4 w-4 text-amber-500" /> Loyalty Points (₹)
+                  <Award className="h-4 w-4 text-pink-500" /> Loyalty Points (₹)
                 </div>
                 <input
                   type="number"
@@ -481,57 +581,62 @@ export default function PosPage() {
               </div>
             </div>
 
-            {/* Balance verification indicator */}
-            <div className={`rounded-xl p-3 text-xs font-medium flex items-center justify-between ${
-              Math.abs(paymentRemaining) <= 0.05
-                ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
-                : "bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
-            }`}>
-              <span>Entered: ₹{enteredPaymentsTotal.toFixed(2)} / ₹{finalTotal.toFixed(2)}</span>
-              <span>
-                {Math.abs(paymentRemaining) <= 0.05
-                  ? "✓ Balanced Exactly"
-                  : `Remaining: ₹${paymentRemaining.toFixed(2)}`}
-              </span>
+            {/* Split reconciliation validation */}
+            <div className="rounded-xl border border-border bg-accent/40 p-3 space-y-1 text-xs font-mono">
+              <div className="flex justify-between">
+                <span>Sum Entered:</span>
+                <span className="font-bold">₹{enteredPaymentsTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Unallocated Balance:</span>
+                <span className={`font-bold ${paymentRemaining === 0 ? "text-emerald-600" : "text-red-500"}`}>
+                  ₹{paymentRemaining.toFixed(2)}
+                </span>
+              </div>
             </div>
 
             <div className="flex items-center gap-3 pt-2">
               <button
+                type="button"
                 onClick={() => setShowCheckoutModal(false)}
-                className="flex-1 rounded-xl border border-border bg-card py-2.5 text-xs font-semibold hover:bg-accent transition"
+                className="flex-1 rounded-xl border border-border bg-background py-2.5 text-xs font-semibold hover:bg-accent transition"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleCompleteCheckout}
                 disabled={checkoutLoading || Math.abs(paymentRemaining) > 0.05}
-                className="flex-1 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow hover:bg-blue-500 disabled:opacity-50 transition"
+                className="flex-1 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-500 disabled:opacity-50 transition"
               >
-                {checkoutLoading ? "Processing..." : "Complete & Print Invoice"}
+                {checkoutLoading ? "Recording..." : "Complete Sale"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Printable Thermal Receipt Modal */}
+      {/* Printable 80mm Thermal Receipt Preview Modal */}
       {showReceipt && completedSale && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs">
-                <CheckCircle2 className="h-4 w-4" /> Sale Completed!
+            <div className="flex items-center justify-between pb-2 border-b border-border">
+              <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs">
+                <CheckCircle className="h-4 w-4" /> Sale Completed
               </div>
               <button
                 onClick={() => setShowReceipt(false)}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
-                Close ✕
+                ✕ Close
               </button>
             </div>
 
-            {/* Printable Receipt Area with @media print format */}
-            <div id="receipt-print-area" className="rounded-xl border border-dashed border-border bg-white text-black p-4 font-mono text-xs space-y-2 shadow-inner">
+            {/* 80mm Receipt Box */}
+            <div
+              id="thermal-receipt"
+              className="rounded-lg border border-border bg-white text-black p-4 font-mono text-xs space-y-2 shadow-inner"
+            >
               <div className="text-center pb-2 border-b border-dashed border-zinc-400">
                 <h2 className="font-bold text-sm uppercase">{completedSale.organizationName}</h2>
                 <p className="text-[10px] text-zinc-600">{completedSale.storeName}</p>
@@ -542,7 +647,9 @@ export default function PosPage() {
               <div className="py-2 space-y-1 border-b border-dashed border-zinc-400">
                 {completedSale.cartItems.map((item: any) => (
                   <div key={item.product_id} className="flex justify-between text-[11px]">
-                    <span>{item.quantity}x {item.name}</span>
+                    <span>
+                      {item.quantity}x {item.name}
+                    </span>
                     <span>₹{(item.selling_price * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
