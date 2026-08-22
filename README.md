@@ -1,5 +1,6 @@
 # RetailPilot AI — Intelligent Retail Operations SaaS
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpurnimadigi16-alt%2Fretailpilot-ai&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,NEXT_PUBLIC_APP_URL)
 [![CI/CD Pipeline](https://github.com/purnimadigi16-alt/retailpilot-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/purnimadigi16-alt/retailpilot-ai/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
@@ -10,6 +11,16 @@
 > **IRC-SD Main Capstone Project #2**  
 > **Evaluation: 120 Marks (Normalized to 100)**  
 > **Certification:** AI-Powered Software Dev • **Architecture:** Multi-Tenant SaaS + Supabase RLS • **Intelligence:** MCP Server + Autonomous Agents
+
+---
+
+## ⚡ 1-Click Vercel Cloud Deployment
+
+Deploy directly to Vercel with automatic continuous deployment connected to the Git repository:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpurnimadigi16-alt%2Fretailpilot-ai&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,NEXT_PUBLIC_APP_URL)
+
+See the full [Vercel Deployment Guide](docs/DEPLOYMENT_GUIDE.md) for environment variable configurations and step-by-step instructions.
 
 ---
 
