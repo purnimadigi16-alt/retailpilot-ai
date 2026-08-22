@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  retailpilot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: retailpilot-saas
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=https://lqcyiixtdwsgnqjxhvmh.supabase.co
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxY3lpaXh0ZHdzZ25xanhodm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczODAxOTYsImV4cCI6MjEwMjk1NjE5Nn0.KU23YTro38S9BkIlOHi8NvWKf7jGEOunyrAyFJGrrig
+      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxY3lpaXh0ZHdzZ25xanhodm1oIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzM4MDE5NiwiZXhwIjoyMTAyOTU2MTk2fQ.3n_pkHPHMER5wmXeqUFoZVRcsjXJAdOvAZUH3wIo7fw
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+    restart: unless-stopped
