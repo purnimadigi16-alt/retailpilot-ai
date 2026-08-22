@@ -78,7 +78,6 @@ export async function POST(req: NextRequest) {
       product_id: i.product_id,
       quantity: Number(i.quantity),
       unit_cost: Number(i.unit_cost),
-      total: Number((Number(i.quantity) * Number(i.unit_cost)).toFixed(2)),
     }));
 
     await adminDb.from("purchase_items").insert(poItemsPayload);
