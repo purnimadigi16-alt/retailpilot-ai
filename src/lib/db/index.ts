@@ -415,33 +415,37 @@ export async function calculateAllProductsStock(
   organizationId: string,
   storeId?: string
 ): Promise<Record<string, number>> {
+  const stockMap: Record<string, number> = {};
+
+  // Initialize from master catalog defaults
+  for (const prod of MASTER_PRODUCTS_CATALOG) {
+    if (prod.current_stock !== undefined) {
+      stockMap[prod.id] = prod.current_stock;
+      stockMap[prod.sku] = prod.current_stock;
+    }
+  }
+
   try {
-    let query = adminDb.from("inventory_ledger").select("product_id, quantity");
-
-    const { data, error } = await query;
-    const stockMap: Record<string, number> = {};
-
-    for (const prod of MASTER_PRODUCTS_CATALOG) {
-      if (prod.current_stock !== undefined) {
-        stockMap[prod.id] = prod.current_stock;
-        stockMap[prod.sku] = prod.current_stock;
-      }
+    const orgId = normalizeOrgId(organizationId);
+    let query = adminDb.from("inventory_ledger").select("product_id, quantity").eq("organization_id", orgId);
+    if (storeId) {
+      const sId = normalizeStoreId(storeId);
+      if (sId) query = query.eq("store_id", sId);
     }
 
+    const { data, error } = await query;
     if (!error && data && data.length > 0) {
+      const ledgerSums: Record<string, number> = {};
       for (const row of data) {
-        stockMap[row.product_id] = (stockMap[row.product_id] || 0) + Number(row.quantity || 0);
+        ledgerSums[row.product_id] = (ledgerSums[row.product_id] || 0) + Number(row.quantity || 0);
+      }
+      for (const [prodId, sum] of Object.entries(ledgerSums)) {
+        stockMap[prodId] = sum;
       }
     }
 
     return stockMap;
   } catch {
-    const stockMap: Record<string, number> = {};
-    for (const prod of MASTER_PRODUCTS_CATALOG) {
-      if (prod.current_stock !== undefined) {
-        stockMap[prod.id] = prod.current_stock;
-      }
-    }
     return stockMap;
   }
 }
