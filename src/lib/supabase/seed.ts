@@ -123,34 +123,33 @@ export async function seedDatabase() {
       product_id: string;
       movement_type: string;
       quantity: number;
-      cost_price: number;
       reference_id?: string;
       notes: string;
     }> = [
       // Milk: Opening 50, Sale -2, Purchase +30 -> Stock = 78
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000001", movement_type: "OPENING_STOCK", quantity: 50, cost_price: 54.00, notes: "Initial store opening stock" },
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000001", movement_type: "SALE", quantity: -2, cost_price: 54.00, reference_id: "INV-2026-0089", notes: "POS Sale deduction" },
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000001", movement_type: "PURCHASE", quantity: 30, cost_price: 54.00, reference_id: "PO-APX-2026-001", notes: "GRN Receipt Intake" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000001", movement_type: "Opening", quantity: 50, notes: "Initial store opening stock" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000001", movement_type: "Sale", quantity: -2, reference_id: "INV-2026-0089", notes: "POS Sale deduction" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000001", movement_type: "Purchase", quantity: 30, reference_id: "PO-APX-2026-001", notes: "GRN Receipt Intake" },
 
       // Bread: Opening 30, Sale -5 -> Stock = 25
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000002", movement_type: "OPENING_STOCK", quantity: 30, cost_price: 35.00, notes: "Initial opening stock" },
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000002", movement_type: "SALE", quantity: -5, cost_price: 35.00, notes: "POS Sale deduction" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000002", movement_type: "Opening", quantity: 30, notes: "Initial opening stock" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000002", movement_type: "Sale", quantity: -5, notes: "POS Sale deduction" },
 
       // Eggs: Opening 40, Damaged -2 -> Stock = 38
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000003", movement_type: "OPENING_STOCK", quantity: 40, cost_price: 75.00, notes: "Initial opening stock" },
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000003", movement_type: "DAMAGED", quantity: -2, cost_price: 75.00, notes: "Transit breakage write-down" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000003", movement_type: "Opening", quantity: 40, notes: "Initial opening stock" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000003", movement_type: "Damaged", quantity: -2, notes: "Transit breakage write-down" },
 
       // Coffee: Opening 10 -> Low stock trigger (reorder is 15) -> Stock = 10
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000004", movement_type: "OPENING_STOCK", quantity: 10, cost_price: 320.00, notes: "Initial opening stock" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000004", movement_type: "Opening", quantity: 10, notes: "Initial opening stock" },
 
       // Olive Oil: Opening 14 -> Stock = 14
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000005", movement_type: "OPENING_STOCK", quantity: 14, cost_price: 650.00, notes: "Initial opening stock" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000005", movement_type: "Opening", quantity: 14, notes: "Initial opening stock" },
 
       // Chips: Opening 60 -> Stock = 60
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000006", movement_type: "OPENING_STOCK", quantity: 60, cost_price: 28.00, notes: "Initial opening stock" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000006", movement_type: "Opening", quantity: 60, notes: "Initial opening stock" },
 
       // Dead stock Truffle: Opening 18, 0 sales in 90 days
-      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000010", movement_type: "OPENING_STOCK", quantity: 18, cost_price: 1800.00, notes: "Imported specialty intake - 90 days ago" },
+      { organization_id: "00000000-0000-0000-0000-000000000001", store_id: "00000000-0000-0000-0001-000000000001", product_id: "00000000-0000-0001-0001-000000000010", movement_type: "Opening", quantity: 18, notes: "Imported specialty intake - 90 days ago" },
     ];
 
     for (const entry of ledgerEntries) {

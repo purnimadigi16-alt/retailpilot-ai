@@ -453,16 +453,49 @@ export async function recordLedgerMovement(entry: {
   organization_id: string;
   store_id?: string;
   product_id: string;
-  movement_type: MovementType;
+  movement_type: MovementType | string;
   quantity: number; // positive for additions, negative for deductions
   cost_price?: number;
   reference_id?: string;
   notes?: string;
 }): Promise<InventoryLedgerEntry | null> {
   try {
+    const orgId = normalizeOrgId(entry.organization_id);
+    const storeId = normalizeStoreId(entry.store_id) || "00000000-0000-0000-0001-000000000001";
+
+    const MOVEMENT_MAP: Record<string, string> = {
+      OPENING_STOCK: "Opening",
+      OPENING: "Opening",
+      Opening: "Opening",
+      PURCHASE: "Purchase",
+      Purchase: "Purchase",
+      SALE: "Sale",
+      Sale: "Sale",
+      RETURN: "Return",
+      Return: "Return",
+      DAMAGED: "Damaged",
+      Damaged: "Damaged",
+      ADJUSTMENT: "Adjustment",
+      Adjustment: "Adjustment",
+      TRANSFER_IN: "Adjustment",
+      TRANSFER_OUT: "Adjustment",
+    };
+
+    const formattedType = MOVEMENT_MAP[entry.movement_type] || "Adjustment";
+
+    const payload = {
+      organization_id: orgId,
+      store_id: storeId,
+      product_id: entry.product_id,
+      movement_type: formattedType,
+      quantity: Number(entry.quantity),
+      reference_id: entry.reference_id || null,
+      notes: entry.notes || `Stock movement ${formattedType}`,
+    };
+
     const { data, error } = await adminDb
       .from("inventory_ledger")
-      .insert([entry])
+      .insert([payload])
       .select()
       .single();
 

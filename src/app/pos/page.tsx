@@ -52,6 +52,7 @@ export default function PosPage() {
   const [pointsAmount, setPointsAmount] = useState<number>(0);
   const [customerId, setCustomerId] = useState<string>("");
   const [customers, setCustomers] = useState<any[]>([]);
+  const [saleNotes, setSaleNotes] = useState<string>("");
 
   // Receipt modal state
   const [completedSale, setCompletedSale] = useState<any>(null);
@@ -199,6 +200,7 @@ export default function PosPage() {
         payments,
         discount: discountAmount,
         tax_rate: 0.08,
+        notes: saleNotes.trim() || undefined,
       };
 
       const res = await fetch("/api/sales", {
@@ -579,6 +581,20 @@ export default function PosPage() {
                   className="w-28 rounded-lg border border-border bg-card px-2 py-1 text-right font-mono text-xs font-bold"
                 />
               </div>
+            </div>
+
+            {/* Order notes / remarks */}
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1">
+                Order Notes / Memo <span className="text-muted-foreground font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Express counter / Festival discount"
+                value={saleNotes}
+                onChange={(e) => setSaleNotes(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background p-2 text-xs"
+              />
             </div>
 
             {/* Split reconciliation validation */}

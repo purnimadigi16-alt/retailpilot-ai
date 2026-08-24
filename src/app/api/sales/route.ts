@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       payments = [], // Array<{ method: string, amount: number }>
       discount = 0,
       tax_rate = 0.08,
+      notes,
     } = body;
 
     if (!organization_id || !store_id || !items.length) {
@@ -121,10 +122,10 @@ export async function POST(req: NextRequest) {
         organization_id: orgId,
         store_id: sId,
         product_id: item.product_id,
-        movement_type: "SALE",
+        movement_type: "Sale",
         quantity: -Math.abs(Number(item.quantity)),
         reference_id: sale.id,
-        notes: `POS sale checkout - ${invoiceNumber}`,
+        notes: notes ? `POS sale - ${invoiceNumber} (${notes})` : `POS sale - ${invoiceNumber}`,
       });
     }
 

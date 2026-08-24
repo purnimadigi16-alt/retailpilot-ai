@@ -31,6 +31,7 @@ export default function SalesPage() {
   const [selectedProductId, setSelectedProductId] = useState("");
   const [returnQty, setReturnQty] = useState(1);
   const [returnReason, setReturnReason] = useState("Customer changed mind / unopened");
+  const [returnNotes, setReturnNotes] = useState("");
   const [returnLoading, setReturnLoading] = useState(false);
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export default function SalesPage() {
     setSelectedSale(sale);
     setReturnQty(1);
     setReturnReason("Customer changed mind / unopened");
+    setReturnNotes("");
 
     // Determine default return product
     if (sale.sale_items && sale.sale_items.length > 0) {
@@ -112,6 +114,10 @@ export default function SalesPage() {
       return;
     }
 
+    const finalReason = returnNotes.trim()
+      ? `${returnReason} (${returnNotes.trim()})`
+      : returnReason;
+
     setReturnLoading(true);
     try {
       const res = await fetch("/api/returns", {
@@ -122,7 +128,7 @@ export default function SalesPage() {
           sale_id: selectedSale.id,
           product_id: targetProdId,
           quantity: Number(returnQty),
-          reason: returnReason,
+          reason: finalReason,
         }),
       });
 
@@ -408,7 +414,22 @@ export default function SalesPage() {
                 <option value="Defective unit / warranty replacement">Defective unit / warranty replacement</option>
                 <option value="Incorrect size / color fit">Incorrect size / color fit</option>
                 <option value="Expired item returned">Expired item returned</option>
+                <option value="Quality dissatisfaction">Quality dissatisfaction</option>
+                <option value="Billing discrepancy correction">Billing discrepancy correction</option>
               </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-1">
+                Return Notes / Memo <span className="text-muted-foreground font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Customer provided original receipt with seal intact"
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background p-2 text-xs"
+              />
             </div>
 
             <div className="flex items-center gap-3 pt-3 border-t border-border">
