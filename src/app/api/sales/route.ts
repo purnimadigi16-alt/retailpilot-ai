@@ -129,11 +129,25 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. Insert Split Payments
+    // 3. Insert Split Payments (Map to TitleCase for payments_method_check constraint)
+    const PAYMENT_METHOD_MAP: Record<string, string> = {
+      CASH: "Cash",
+      cash: "Cash",
+      Cash: "Cash",
+      CARD: "Card",
+      card: "Card",
+      Card: "Card",
+      UPI: "UPI",
+      upi: "UPI",
+      LOYALTY_POINTS: "Points",
+      points: "Points",
+      Points: "Points",
+    };
+
     if (payments.length > 0) {
       const paymentsPayload = payments.map((p: any) => ({
         sale_id: sale.id,
-        method: p.method,
+        method: PAYMENT_METHOD_MAP[p.method] || p.method || "Cash",
         amount: Number(p.amount),
       }));
       await adminDb.from("payments").insert(paymentsPayload);
