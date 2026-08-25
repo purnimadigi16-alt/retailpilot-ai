@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
-
-const inter = Inter({
-  subsets: ["latin"],
-  adjustFontFallback: false,
-  display: "swap",
-});
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -59,7 +52,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} antialiased min-h-screen bg-background text-foreground`}>
+      <body className="font-sans antialiased min-h-screen bg-background text-foreground">
         <AppShell>{children}</AppShell>
       </body>
     </html>
