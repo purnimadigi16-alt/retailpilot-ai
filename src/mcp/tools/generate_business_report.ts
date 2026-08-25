@@ -28,7 +28,7 @@ export async function generate_business_report(
   const { data: products } = await adminDb
     .from("products")
     .select("*")
-    .eq("organization_id", organization_id);
+    .eq("organization_id", orgId);
 
   const costMap: Record<string, number> = {};
   const nameMap: Record<string, string> = {};
@@ -72,7 +72,7 @@ export async function generate_business_report(
   const { data: expenses } = await adminDb
     .from("expenses")
     .select("amount")
-    .eq("organization_id", organization_id);
+    .eq("organization_id", orgId);
 
   const totalExpenses = (expenses || []).reduce(
     (acc, curr) => acc + Number(curr.amount || 0),
@@ -83,32 +83,32 @@ export async function generate_business_report(
   const netProfit = Number((grossProfit - totalExpenses).toFixed(2));
 
   // 5. Compute Inventory Valuation & Dead Stock & Low Stock
-  const stockMap = await calculateAllProductsStock(organization_id);
+  const stockMap = await calculateAllProductsStock(orgId);
   let inventoryValuation = 0;
   for (const p of products || []) {
     const stock = stockMap[p.id] || 0;
     inventoryValuation += stock * Number(p.cost_price || 0);
   }
 
-  const deadStockItems = await get_dead_stock({ organization_id, min_days: 60 });
+  const deadStockItems = await get_dead_stock({ organization_id: orgId, min_days: 60 });
   const deadStockValue = deadStockItems.reduce(
     (acc, curr) => acc + curr.dead_capital_tied_up,
     0
   );
 
-  const lowStockItems = await get_low_stock_products({ organization_id });
+  const lowStockItems = await get_low_stock_products({ organization_id: orgId });
 
   const topSellingSkus = Object.values(skuSales)
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5);
 
   const executiveInsights = [
-    `Gross revenue for ${period_month} reached $${totalRevenue.toFixed(2)} with gross margin of ${(
+    `Gross revenue for ${period_month} reached ₹${totalRevenue.toFixed(2)} with gross margin of ${(
       (totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0)
     ).toFixed(1)}%.`,
-    `Identified ${deadStockItems.length} dead stock SKU(s) holding $${deadStockValue.toFixed(2)} in stagnant capital; markdown liquidation recommended.`,
+    `Identified ${deadStockItems.length} dead stock SKU(s) holding ₹${deadStockValue.toFixed(2)} in stagnant capital; markdown liquidation recommended.`,
     `Currently ${lowStockItems.length} SKU(s) are below reorder threshold and require purchase order replenishment to prevent stockouts.`,
-    `Net operating profitability stands at $${netProfit.toFixed(2)} after deducting $${totalExpenses.toFixed(2)} in store expenses.`,
+    `Net operating profitability stands at ₹${netProfit.toFixed(2)} after deducting ₹${totalExpenses.toFixed(2)} in store expenses.`,
   ];
 
   return {

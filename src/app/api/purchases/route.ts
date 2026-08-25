@@ -107,7 +107,8 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { purchase_id, status } = body;
+    const purchase_id = body.purchase_id || body.id;
+    const status = body.status;
 
     if (!purchase_id || !status) {
       return NextResponse.json({ error: "Missing purchase_id or status" }, { status: 400 });
