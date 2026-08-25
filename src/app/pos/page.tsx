@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useDemoSession } from "@/context/DemoSessionContext";
 import { Product } from "@/types";
+import { getEffectiveGstRate, calculateCartGst } from "@/lib/gst";
 import {
   ShoppingCart,
   Barcode,
@@ -16,9 +17,9 @@ import {
   Award,
   CheckCircle,
   Printer,
-  Sparkles,
-  Layers,
   ShoppingBag,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 
 interface CartItem {
@@ -30,6 +31,7 @@ interface CartItem {
   quantity: number;
   current_stock: number;
   category?: string;
+  gst_rate: number;
 }
 
 export default function PosPage() {
@@ -37,6 +39,7 @@ export default function PosPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -66,14 +69,24 @@ export default function PosPage() {
 
   async function fetchProducts() {
     setLoading(true);
+    setFetchError(null);
     try {
-      const res = await fetch(`/api/products?organization_id=${organizationId}`);
-      const json = await res.json();
-      if (json.data && json.data.length > 0) {
-        setProducts(json.data);
+      const activeOrg = organizationId || "org_01";
+      const res = await fetch(`/api/products?organization_id=${encodeURIComponent(activeOrg)}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: Failed to load product catalog from server`);
       }
-    } catch (e) {
-      console.error(e);
+      const json = await res.json();
+      if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+        setProducts(json.data);
+      } else if (json.error) {
+        throw new Error(json.error);
+      } else {
+        setProducts([]);
+      }
+    } catch (e: any) {
+      console.error("[POS] Error fetching product catalog:", e);
+      setFetchError(e.message || "Failed to load product catalog");
     } finally {
       setLoading(false);
     }
@@ -81,7 +94,8 @@ export default function PosPage() {
 
   async function fetchCustomers() {
     try {
-      const res = await fetch(`/api/customers?organization_id=${organizationId}`);
+      const activeOrg = organizationId || "org_01";
+      const res = await fetch(`/api/customers?organization_id=${encodeURIComponent(activeOrg)}`);
       const json = await res.json();
       if (json.data) setCustomers(json.data);
     } catch (e) {
@@ -108,6 +122,7 @@ export default function PosPage() {
   }
 
   function addToCart(p: any) {
+    const effectiveGst = p.gst_rate !== undefined ? Number(p.gst_rate) : getEffectiveGstRate(p);
     setCart((prev) => {
       const existing = prev.find((item) => item.product_id === p.id);
       if (existing) {
@@ -126,6 +141,7 @@ export default function PosPage() {
           quantity: 1,
           current_stock: p.current_stock ?? 0,
           category: p.category,
+          gst_rate: effectiveGst,
         },
       ];
     });
@@ -149,9 +165,28 @@ export default function PosPage() {
     setCart((prev) => prev.filter((i) => i.product_id !== productId));
   }
 
+  // Subtotal & Statutory Indian GST calculations per line-item
   const subtotal = cart.reduce((acc, curr) => acc + curr.selling_price * curr.quantity, 0);
-  const tax = Number((Math.max(0, subtotal - discountAmount) * 0.08).toFixed(2));
-  const finalTotal = Number((Math.max(0, subtotal - discountAmount) + tax).toFixed(2));
+  const discountRatio = subtotal > 0 ? Math.min(1, discountAmount / subtotal) : 0;
+
+  const itemTaxBreakdown = cart.map((item) => {
+    const lineSubtotal = item.selling_price * item.quantity;
+    const discountedLine = lineSubtotal * (1 - discountRatio);
+    const lineTax = (discountedLine * (item.gst_rate ?? 5)) / 100;
+    return {
+      ...item,
+      lineSubtotal,
+      discountedLine,
+      lineTax,
+      cgst: lineTax / 2,
+      sgst: lineTax / 2,
+    };
+  });
+
+  const totalGst = Number(itemTaxBreakdown.reduce((acc, curr) => acc + curr.lineTax, 0).toFixed(2));
+  const cgst = Number((totalGst / 2).toFixed(2));
+  const sgst = Number((totalGst - cgst).toFixed(2));
+  const finalTotal = Number((Math.max(0, subtotal - discountAmount) + totalGst).toFixed(2));
 
   function openCheckout() {
     if (cart.length === 0) return;
@@ -190,17 +225,17 @@ export default function PosPage() {
       if (pointsAmount > 0) payments.push({ method: "LOYALTY_POINTS", amount: Number(pointsAmount) });
 
       const payload = {
-        organization_id: organizationId,
-        store_id: storeId,
+        organization_id: organizationId || "org_01",
+        store_id: storeId || "store_01_main",
         customer_id: customerId || null,
         items: cart.map((i) => ({
           product_id: i.product_id,
           quantity: i.quantity,
           selling_price: i.selling_price,
+          gst_rate: i.gst_rate,
         })),
         payments,
         discount: discountAmount,
-        tax_rate: 0.08,
         notes: saleNotes.trim() || undefined,
       };
 
@@ -224,6 +259,12 @@ export default function PosPage() {
         customerName: attachedCustomer ? attachedCustomer.name : undefined,
         customerPhone: attachedCustomer ? attachedCustomer.phone : undefined,
         notes: saleNotes.trim() || undefined,
+        subtotal,
+        discountAmount,
+        totalGst,
+        cgst,
+        sgst,
+        total: finalTotal,
         organizationName,
         storeName,
         timestamp: new Date().toLocaleString(),
@@ -265,7 +306,7 @@ export default function PosPage() {
             <h1 className="text-xl font-bold text-foreground">High-Speed POS Checkout Terminal</h1>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {organizationName} • {storeName} • Instant ledger stock sync
+            {organizationName} • {storeName} • Statutory Indian GST billing (0%, 5%, 12%, 18%, 28%)
           </p>
         </div>
 
@@ -325,20 +366,37 @@ export default function PosPage() {
             </div>
           </div>
 
-          {/* Product Cards Grid */}
+          {/* Product Cards Grid / Loading / Error States */}
           {loading && products.length === 0 ? (
-            <div className="py-16 text-center text-xs text-muted-foreground">
-              Loading product catalog...
+            <div className="py-20 text-center text-xs text-muted-foreground space-y-3">
+              <RefreshCw className="mx-auto h-6 w-6 animate-spin text-blue-500" />
+              <p className="font-semibold text-foreground">Loading product catalog...</p>
+              <p className="text-[11px] text-muted-foreground">Fetching live inventory for {organizationName}</p>
+            </div>
+          ) : fetchError ? (
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-8 text-center text-xs space-y-3">
+              <AlertCircle className="mx-auto h-8 w-8 text-red-500" />
+              <p className="font-bold text-red-600 dark:text-red-400">Error Loading Product Catalog</p>
+              <p className="text-muted-foreground text-[11px] font-mono">{fetchError}</p>
+              <button
+                onClick={fetchProducts}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-500 transition shadow"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>Retry Loading</span>
+              </button>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center text-xs text-muted-foreground">
-              <ShoppingBag className="mx-auto h-8 w-8 text-muted-foreground/40 mb-2" />
-              No products found matching &ldquo;{searchQuery}&rdquo;.
+            <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center text-xs text-muted-foreground space-y-2">
+              <ShoppingBag className="mx-auto h-8 w-8 text-muted-foreground/40" />
+              <p className="font-semibold text-foreground">No products found matching &ldquo;{searchQuery}&rdquo;</p>
+              <p className="text-[11px]">Try searching by SKU, barcode or switching categories.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[620px] overflow-y-auto pr-1">
               {filteredProducts.map((p) => {
                 const isLow = (p.current_stock ?? 0) <= (p.reorder_level ?? 10);
+                const gstRate = p.gst_rate !== undefined ? p.gst_rate : getEffectiveGstRate(p);
                 return (
                   <div
                     key={p.id}
@@ -350,9 +408,14 @@ export default function PosPage() {
                         <span className="text-[10px] font-mono text-muted-foreground font-semibold">
                           {p.sku}
                         </span>
-                        <span className="rounded-md bg-accent px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
-                          {p.category || "General"}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="rounded-md bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 px-1.5 py-0.5 text-[9px] font-mono font-bold">
+                            {gstRate}% GST
+                          </span>
+                          <span className="rounded-md bg-accent px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
+                            {p.category || "General"}
+                          </span>
+                        </div>
                       </div>
                       <h3 className="text-xs font-bold text-foreground line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
                         {p.name}
@@ -412,7 +475,7 @@ export default function PosPage() {
             </div>
 
             {/* Cart Items List */}
-            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1 divide-y divide-border/40">
+            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1 divide-y divide-border/40">
               {cart.length === 0 ? (
                 <div className="py-16 text-center text-xs text-muted-foreground space-y-2">
                   <ShoppingCart className="mx-auto h-8 w-8 text-muted-foreground/30" />
@@ -424,11 +487,16 @@ export default function PosPage() {
               ) : (
                 cart.map((item) => (
                   <div key={item.product_id} className="pt-2 flex items-center justify-between text-xs">
-                    <div className="max-w-[140px]">
+                    <div className="max-w-[130px]">
                       <p className="font-semibold text-foreground truncate">{item.name}</p>
-                      <p className="text-[10px] text-muted-foreground font-mono">
-                        ₹{item.selling_price.toFixed(2)} each
-                      </p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          ₹{item.selling_price.toFixed(2)}
+                        </span>
+                        <span className="rounded bg-accent px-1 py-0.2 text-[9px] font-mono text-muted-foreground">
+                          {item.gst_rate}% GST
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -464,15 +532,28 @@ export default function PosPage() {
           </div>
 
           {/* Cart Pricing Calculations & Checkout Button */}
-          <div className="mt-4 pt-4 border-t border-border space-y-2.5 text-xs">
+          <div className="mt-4 pt-4 border-t border-border space-y-2 text-xs">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal:</span>
               <span className="font-mono font-semibold">₹{subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>GST / Sales Tax (8%):</span>
-              <span className="font-mono font-semibold">₹{tax.toFixed(2)}</span>
+
+            {/* Statutory GST Line Items Breakdown */}
+            <div className="rounded-lg bg-accent/40 p-2 space-y-1 text-[11px] font-mono text-muted-foreground">
+              <div className="flex justify-between text-foreground font-semibold">
+                <span>Total Statutory GST:</span>
+                <span>₹{totalGst.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-[10px] pl-2 border-l-2 border-blue-500/40">
+                <span>CGST (Central 50%):</span>
+                <span>₹{cgst.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-[10px] pl-2 border-l-2 border-blue-500/40">
+                <span>SGST (State 50%):</span>
+                <span>₹{sgst.toFixed(2)}</span>
+              </div>
             </div>
+
             <div className="flex justify-between text-muted-foreground items-center">
               <span>Discount Voucher (₹):</span>
               <input
@@ -746,7 +827,7 @@ export default function PosPage() {
                 {completedSale.cartItems.map((item: any) => (
                   <div key={item.product_id} className="flex justify-between text-[11px]">
                     <span>
-                      {item.quantity}x {item.name}
+                      {item.quantity}x {item.name} ({item.gst_rate}% GST)
                     </span>
                     <span>₹{(item.selling_price * item.quantity).toFixed(2)}</span>
                   </div>
@@ -758,12 +839,22 @@ export default function PosPage() {
                   <span>Subtotal:</span>
                   <span>₹{Number(completedSale.subtotal).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Tax (8%):</span>
-                  <span>₹{Number(completedSale.tax).toFixed(2)}</span>
+                {Number(completedSale.discountAmount) > 0 && (
+                  <div className="flex justify-between text-emerald-700">
+                    <span>Discount Voucher:</span>
+                    <span>-₹{Number(completedSale.discountAmount).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-[10px] text-zinc-600">
+                  <span>CGST (Central 50%):</span>
+                  <span>₹{Number(completedSale.cgst ?? (completedSale.totalGst / 2)).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-zinc-600">
+                  <span>SGST (State 50%):</span>
+                  <span>₹{Number(completedSale.sgst ?? (completedSale.totalGst / 2)).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-xs pt-1 border-t border-zinc-300">
-                  <span>TOTAL:</span>
+                  <span>TOTAL (Incl. GST):</span>
                   <span>₹{Number(completedSale.total).toFixed(2)}</span>
                 </div>
               </div>

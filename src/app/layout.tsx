@@ -5,8 +5,17 @@ import { AppShell } from "@/components/layout/AppShell";
 
 const inter = Inter({ subsets: ["latin"] });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  "https://retailpilot-ai-kohl.vercel.app";
+
 export const metadata: Metadata = {
-  title: "RetailPilot AI | Intelligent Retail Operations SaaS",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "RetailPilot AI | Intelligent Retail Operations SaaS",
+    template: "%s | RetailPilot AI",
+  },
   description:
     "Enterprise-grade multi-tenant retail management platform with Supabase RLS, immutable stock movement ledger, Model Context Protocol (MCP) server, and autonomous AI business agents.",
   keywords: [
@@ -20,13 +29,22 @@ export const metadata: Metadata = {
     "Stock Movement Ledger",
   ],
   authors: [{ name: "RetailPilot AI Engineering Team" }],
+  alternates: {
+    canonical: SITE_URL,
+  },
   openGraph: {
     title: "RetailPilot AI — Intelligent Retail Operations SaaS",
     description:
       "Full-fledged operational multi-tenant SaaS with Supabase RLS database isolation and live Model Context Protocol (MCP) intelligence.",
     type: "website",
-    url: "https://retailpilot-ai.vercel.app",
+    url: SITE_URL,
     siteName: "RetailPilot AI",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RetailPilot AI — Intelligent Retail Operations SaaS",
+    description:
+      "Full-fledged operational multi-tenant SaaS with Supabase RLS database isolation and live Model Context Protocol (MCP) intelligence.",
   },
 };
 

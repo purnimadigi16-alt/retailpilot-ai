@@ -103,12 +103,17 @@ export async function get_profitability(
   return {
     store_id: sId || "all_stores",
     gross_sales: Number(grossSales.toFixed(2)),
+    cogs: Number(cogs.toFixed(2)),
     cost_of_goods_sold: Number(cogs.toFixed(2)),
     gross_profit: Number(grossProfit.toFixed(2)),
+    gross_margin_pct: grossMarginPercentage,
     gross_margin_percentage: grossMarginPercentage,
     operating_expenses: Number(totalExpenses.toFixed(2)),
     net_profit: Number(netProfit.toFixed(2)),
+    net_margin_pct: netProfitMarginPct,
     period_start: start_date,
     period_end: end_date,
+    start_date,
+    end_date,
   };
 }

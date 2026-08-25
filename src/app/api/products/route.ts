@@ -1,33 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb, calculateAllProductsStock, MASTER_PRODUCTS_CATALOG } from "@/lib/db";
-
-const ORG_UUID_MAP: Record<string, string> = {
-  org_01: "00000000-0000-0000-0000-000000000001",
-  org_02: "00000000-0000-0000-0000-000000000002",
-  org_03: "00000000-0000-0000-0000-000000000003",
-};
+import {
+  adminDb,
+  calculateAllProductsStock,
+  MASTER_PRODUCTS_CATALOG,
+  normalizeOrgId,
+  normalizeStoreId,
+  getEffectiveGstRate,
+} from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const rawOrgId = searchParams.get("organization_id") || "org_01";
-    const storeId = searchParams.get("store_id") || undefined;
+    const rawOrgId = searchParams.get("organization_id");
+    const rawStoreId = searchParams.get("store_id");
     const barcode = searchParams.get("barcode");
     const search = searchParams.get("search");
 
-    const targetOrgId = rawOrgId.toLowerCase();
-    const mappedUuid = ORG_UUID_MAP[targetOrgId] || targetOrgId;
+    const orgId = normalizeOrgId(rawOrgId || "org_01");
+    const storeId = rawStoreId ? normalizeStoreId(rawStoreId) : undefined;
 
     let items: any[] = [];
 
     // 1. Try querying remote Supabase PostgreSQL
     try {
-      let query = adminDb.from("products").select("*");
-      if (rawOrgId.includes("-")) {
-        query = query.eq("organization_id", rawOrgId);
-      } else if (mappedUuid) {
-        query = query.or(`organization_id.eq.${mappedUuid},organization_id.eq.${rawOrgId}`);
-      }
+      let query = adminDb.from("products").select("*").eq("organization_id", orgId);
 
       if (barcode) {
         query = query.eq("barcode", barcode);
@@ -48,24 +44,31 @@ export async function GET(req: NextRequest) {
     if (items.length === 0) {
       items = MASTER_PRODUCTS_CATALOG.filter((p) => {
         const matchesOrg =
-          p.organization_id === targetOrgId ||
-          p.organization_id === mappedUuid ||
-          (targetOrgId === "org_01" && p.organization_id === "org_01");
+          p.organization_id === orgId ||
+          p.organization_id === (rawOrgId || "org_01").toLowerCase() ||
+          (orgId === "00000000-0000-0000-0000-000000000001" && p.organization_id === "org_01") ||
+          (orgId === "00000000-0000-0000-0000-000000000002" && p.organization_id === "org_02") ||
+          (orgId === "00000000-0000-0000-0000-000000000003" && p.organization_id === "org_03");
 
         if (!matchesOrg) return false;
         if (barcode && p.barcode !== barcode) return false;
-        if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.sku.toLowerCase().includes(search.toLowerCase())) {
+        if (
+          search &&
+          !p.name.toLowerCase().includes(search.toLowerCase()) &&
+          !p.sku.toLowerCase().includes(search.toLowerCase())
+        ) {
           return false;
         }
         return true;
       });
     }
 
-    // 3. Attach calculated current stock from immutable ledger
-    const stockMap = await calculateAllProductsStock(rawOrgId, storeId);
+    // 3. Attach calculated current stock from immutable ledger and statutory GST slab
+    const stockMap = await calculateAllProductsStock(orgId, storeId);
     const enriched = items.map((p) => ({
       ...p,
       current_stock: stockMap[p.id] ?? stockMap[p.sku] ?? p.current_stock ?? 25,
+      gst_rate: getEffectiveGstRate(p),
     }));
 
     return NextResponse.json({ data: enriched });
@@ -77,7 +80,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { organization_id, store_id, name, sku, barcode, category, cost_price, selling_price, reorder_level } = body;
+    const {
+      organization_id,
+      store_id,
+      name,
+      sku,
+      barcode,
+      category,
+      cost_price,
+      selling_price,
+      reorder_level,
+      gst_rate,
+    } = body;
 
     if (!organization_id || !name || !sku || !barcode) {
       return NextResponse.json(
@@ -86,12 +100,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const orgId = normalizeOrgId(organization_id);
+    const sId = store_id ? normalizeStoreId(store_id) : null;
+    const effectiveGst = getEffectiveGstRate({ category, gst_rate });
+
     const { data, error } = await adminDb
       .from("products")
       .insert([
         {
-          organization_id,
-          store_id: store_id || null,
+          organization_id: orgId,
+          store_id: sId,
           name,
           sku,
           barcode,
@@ -108,7 +126,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    return NextResponse.json({ data: { ...data, gst_rate: effectiveGst } }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

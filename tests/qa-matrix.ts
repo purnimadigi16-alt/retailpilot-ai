@@ -59,14 +59,21 @@ export const QA_50_TEST_CASES: TestCase[] = [
   {
     id: "FT-05",
     category: "Functional Tests",
-    title: "Sales Tax Calculation Precision",
-    scope: "Validate standard 8% tax calculation on subtotal after discounts.",
-    verificationStep: "Subtotal ₹1,000, Discount ₹100 -> Taxable ₹900 * 8% = ₹72.00.",
-    expectedResult: "Computed tax matches ₹72.00 exactly.",
+    title: "Statutory Indian GST Slab Calculation Precision",
+    scope: "Validate itemized statutory Indian GST slab calculation (0%, 5%, 12%, 18%, 28%) with CGST + SGST 50/50 split.",
+    verificationStep: "Mixed Cart: ₹68 (0% Milk) + ₹100 (5% Bread) + ₹200 (18% Chocolate) -> GST: ₹0 + ₹5 + ₹36 = ₹41.00 (CGST ₹20.50 + SGST ₹20.50).",
+    expectedResult: "Computed itemized GST matches ₹41.00 exactly with 50/50 CGST/SGST split.",
     run: async () => {
-      const taxable = 1000 - 100;
-      const tax = Number((taxable * 0.08).toFixed(2));
-      return { passed: tax === 72.00, message: `Tax calculated correctly as ₹${tax}.`, durationMs: 5 };
+      const items = [
+        { price: 68, qty: 1, gst: 0 },
+        { price: 100, qty: 1, gst: 5 },
+        { price: 200, qty: 1, gst: 18 },
+      ];
+      const totalGst = Number(items.reduce((acc, i) => acc + (i.price * i.qty * i.gst) / 100, 0).toFixed(2));
+      const cgst = Number((totalGst / 2).toFixed(2));
+      const sgst = Number((totalGst - cgst).toFixed(2));
+      const passed = totalGst === 41.00 && cgst === 20.50 && sgst === 20.50;
+      return { passed, message: `Statutory GST calculated correctly as ₹${totalGst} (CGST: ₹${cgst}, SGST: ₹${sgst}).`, durationMs: 5 };
     },
   },
   {

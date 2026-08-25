@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb, recordLedgerMovement, normalizeOrgId, normalizeStoreId } from "@/lib/db";
+import {
+  adminDb,
+  normalizeOrgId,
+  normalizeStoreId,
+  recordLedgerMovement,
+  getEffectiveGstRate,
+  MASTER_PRODUCTS_CATALOG,
+} from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const rawOrgId = searchParams.get("organization_id") || "org_01";
-    const rawStoreId = searchParams.get("store_id");
-
-    const orgId = normalizeOrgId(rawOrgId);
-    const storeId = normalizeStoreId(rawStoreId);
+    const orgId = normalizeOrgId(searchParams.get("organization_id") || "org_01");
+    const storeId = searchParams.get("store_id");
 
     let query = adminDb
       .from("sales")
-      .select("*, customers ( name, phone, email, loyalty_points ), sale_items ( id, product_id, quantity, selling_price, total, products ( name, sku ) ), payments ( id, method, amount )")
+      .select(
+        "*, customers ( name, phone ), sale_items ( id, product_id, quantity, selling_price, total, products ( name, sku, category ) ), payments ( id, method, amount )"
+      )
       .eq("organization_id", orgId)
       .order("created_at", { ascending: false });
 
@@ -25,7 +31,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: data || [] });
+    return NextResponse.json({ data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -38,10 +44,9 @@ export async function POST(req: NextRequest) {
       organization_id,
       store_id,
       customer_id,
-      items = [], // Array<{ product_id: string, quantity: number, selling_price: number, total: number }>
+      items = [], // Array<{ product_id: string, quantity: number, selling_price: number, gst_rate?: number }>
       payments = [], // Array<{ method: string, amount: number }>
       discount = 0,
-      tax_rate = 0.08,
       notes,
     } = body;
 
@@ -55,13 +60,43 @@ export async function POST(req: NextRequest) {
     const orgId = normalizeOrgId(organization_id);
     const sId = normalizeStoreId(store_id);
 
-    // Compute subtotal
-    const subtotal = items.reduce(
-      (acc: number, item: any) => acc + Number(item.selling_price) * Number(item.quantity),
-      0
-    );
-    const calculatedTax = Number((Math.max(0, subtotal - discount) * tax_rate).toFixed(2));
-    const finalTotal = Number((Math.max(0, subtotal - discount) + calculatedTax).toFixed(2));
+    // Fetch products to retrieve statutory GST rates per item
+    const { data: dbProducts } = await adminDb
+      .from("products")
+      .select("id, category, selling_price")
+      .eq("organization_id", orgId);
+
+    const productMap = new Map<string, any>();
+    for (const p of dbProducts || []) {
+      productMap.set(p.id, p);
+    }
+    for (const p of MASTER_PRODUCTS_CATALOG) {
+      if (!productMap.has(p.id)) productMap.set(p.id, p);
+    }
+
+    // Compute subtotal and itemized statutory GST
+    let subtotal = 0;
+    let rawTax = 0;
+    const discountNum = Number(discount) || 0;
+
+    for (const item of items) {
+      const itemQty = Number(item.quantity) || 1;
+      const itemPrice = Number(item.selling_price) || 0;
+      const lineSubtotal = itemPrice * itemQty;
+      subtotal += lineSubtotal;
+
+      const prodMeta = productMap.get(item.product_id) || {};
+      const itemGstRate =
+        item.gst_rate !== undefined ? Number(item.gst_rate) : getEffectiveGstRate(prodMeta);
+
+      const itemTax = (lineSubtotal * itemGstRate) / 100;
+      rawTax += itemTax;
+    }
+
+    // Adjust tax proportionally if bill-level discount is applied
+    const discountRatio = subtotal > 0 ? Math.min(1, discountNum / subtotal) : 0;
+    const calculatedTax = Number((rawTax * (1 - discountRatio)).toFixed(2));
+    const finalTotal = Number((Math.max(0, subtotal - discountNum) + calculatedTax).toFixed(2));
 
     // Verify split payments equal total amount
     const paymentsTotal = payments.reduce((acc: number, p: any) => acc + Number(p.amount), 0);

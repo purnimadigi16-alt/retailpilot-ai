@@ -42,6 +42,7 @@ export interface Product {
   selling_price: number;
   reorder_level: number;
   current_stock?: number;
+  gst_rate?: number; // 0, 5, 12, 18, or 28
   created_at?: string;
 }
 
@@ -173,6 +174,7 @@ export interface SaleItem {
   quantity: number;
   selling_price: number;
   total: number;
+  gst_rate?: number;
   product?: Product;
 }
 
@@ -248,14 +250,25 @@ export interface DeadStockResult {
   recommended_markdown_pct: number;
 }
 
+export interface GetDeadStockParams {
+  organization_id: string;
+  store_id?: string;
+  threshold_days?: number;
+  days_threshold?: number;
+}
+
 export interface ProfitabilityResult {
   store_id: string;
-  start_date: string;
-  end_date: string;
+  start_date?: string;
+  end_date?: string;
+  period_start?: string;
+  period_end?: string;
   gross_sales: number;
   cogs: number;
+  cost_of_goods_sold?: number;
   gross_profit: number;
   gross_margin_pct: number;
+  gross_margin_percentage?: number;
   operating_expenses: number;
   net_profit: number;
   net_margin_pct: number;
@@ -286,5 +299,7 @@ export interface BusinessReportResult {
   low_stock_count: number;
   top_selling_skus: Array<{ sku: string; name: string; units_sold: number; revenue: number }>;
   executive_insights: string[];
+  strategic_directives?: string[];
+  business_health_score?: string | number;
   disclaimer: string;
 }

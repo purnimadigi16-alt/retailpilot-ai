@@ -106,6 +106,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 68.00,
     reorder_level: 25,
     current_stock: 78,
+    gst_rate: 0,
   },
   {
     id: "00000000-0000-0001-0001-000000000002",
@@ -119,6 +120,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 55.00,
     reorder_level: 20,
     current_stock: 25,
+    gst_rate: 5,
   },
   {
     id: "00000000-0000-0001-0001-000000000003",
@@ -132,6 +134,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 99.00,
     reorder_level: 30,
     current_stock: 38,
+    gst_rate: 0,
   },
   {
     id: "00000000-0000-0001-0001-000000000004",
@@ -145,6 +148,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 499.00,
     reorder_level: 15,
     current_stock: 10,
+    gst_rate: 5,
   },
   {
     id: "00000000-0000-0001-0001-000000000005",
@@ -158,6 +162,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 899.00,
     reorder_level: 12,
     current_stock: 14,
+    gst_rate: 5,
   },
   {
     id: "00000000-0000-0001-0001-000000000006",
@@ -171,6 +176,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 50.00,
     reorder_level: 40,
     current_stock: 60,
+    gst_rate: 12,
   },
   {
     id: "00000000-0000-0001-0001-000000000007",
@@ -184,6 +190,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 280.00,
     reorder_level: 20,
     current_stock: 45,
+    gst_rate: 5,
   },
   {
     id: "00000000-0000-0001-0001-000000000008",
@@ -197,6 +204,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 265.00,
     reorder_level: 25,
     current_stock: 55,
+    gst_rate: 5,
   },
   {
     id: "00000000-0000-0001-0001-000000000009",
@@ -210,6 +218,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 175.00,
     reorder_level: 30,
     current_stock: 65,
+    gst_rate: 18,
   },
   {
     id: "00000000-0000-0001-0001-000000000010",
@@ -223,6 +232,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 2999.00,
     reorder_level: 5,
     current_stock: 18,
+    gst_rate: 28,
   },
 
   // -------------------------------------------------------------
@@ -240,6 +250,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 7999.00,
     reorder_level: 10,
     current_stock: 16,
+    gst_rate: 12,
   },
   {
     id: "00000000-0000-0002-0001-000000000002",
@@ -253,6 +264,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 2899.00,
     reorder_level: 15,
     current_stock: 24,
+    gst_rate: 12,
   },
   {
     id: "00000000-0000-0002-0001-000000000003",
@@ -266,6 +278,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 1799.00,
     reorder_level: 20,
     current_stock: 32,
+    gst_rate: 12,
   },
   {
     id: "00000000-0000-0002-0001-000000000004",
@@ -279,6 +292,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 4299.00,
     reorder_level: 8,
     current_stock: 18,
+    gst_rate: 12,
   },
   {
     id: "00000000-0000-0002-0001-000000000005",
@@ -292,6 +306,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 1199.00,
     reorder_level: 15,
     current_stock: 40,
+    gst_rate: 18,
   },
   {
     id: "00000000-0000-0002-0001-000000000006",
@@ -305,6 +320,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 14999.00,
     reorder_level: 4,
     current_stock: 8,
+    gst_rate: 28,
   },
 
   // -------------------------------------------------------------
@@ -322,6 +338,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 49999.00,
     reorder_level: 8,
     current_stock: 12,
+    gst_rate: 18,
   },
   {
     id: "00000000-0000-0003-0001-000000000002",
@@ -335,6 +352,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 8999.00,
     reorder_level: 12,
     current_stock: 22,
+    gst_rate: 18,
   },
   {
     id: "00000000-0000-0003-0001-000000000003",
@@ -348,6 +366,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 699.00,
     reorder_level: 35,
     current_stock: 85,
+    gst_rate: 18,
   },
   {
     id: "00000000-0000-0003-0001-000000000004",
@@ -361,6 +380,7 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 11499.00,
     reorder_level: 6,
     current_stock: 15,
+    gst_rate: 18,
   },
   {
     id: "00000000-0000-0003-0001-000000000005",
@@ -374,8 +394,11 @@ export const MASTER_PRODUCTS_CATALOG: Product[] = [
     selling_price: 1999.00,
     reorder_level: 20,
     current_stock: 42,
+    gst_rate: 18,
   },
 ];
+
+export { getEffectiveGstRate, calculateCartGst, GST_SLABS } from "@/lib/gst";
 
 /**
  * Calculates current stock from immutable inventory ledger.
