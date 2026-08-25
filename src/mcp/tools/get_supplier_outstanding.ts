@@ -1,8 +1,8 @@
-import { adminDb } from "@/lib/db";
+import { adminDb, normalizeOrgId } from "@/lib/db";
 import { SupplierOutstandingResult } from "@/types";
 
 export interface GetSupplierOutstandingParams {
-  organization_id: string;
+  organization_id?: string;
   min_due?: number;
 }
 
@@ -13,13 +13,14 @@ export interface GetSupplierOutstandingParams {
 export async function get_supplier_outstanding(
   params: GetSupplierOutstandingParams
 ): Promise<SupplierOutstandingResult[]> {
-  const { organization_id, min_due = 0 } = params;
+  const { organization_id = "org_01", min_due = 0 } = params;
+  const orgId = normalizeOrgId(organization_id);
 
   // 1. Query suppliers for the organization
   const { data: suppliers, error } = await adminDb
     .from("suppliers")
     .select("*")
-    .eq("organization_id", organization_id);
+    .eq("organization_id", orgId);
 
   if (error || !suppliers) {
     console.error("Error querying suppliers in get_supplier_outstanding:", error);

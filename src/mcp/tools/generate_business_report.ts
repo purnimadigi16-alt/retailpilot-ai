@@ -1,10 +1,10 @@
-import { adminDb, calculateAllProductsStock } from "@/lib/db";
+import { adminDb, calculateAllProductsStock, normalizeOrgId } from "@/lib/db";
 import { BusinessReportResult } from "@/types";
 import { get_dead_stock } from "./get_dead_stock";
 import { get_low_stock_products } from "./get_low_stock_products";
 
 export interface GenerateBusinessReportParams {
-  organization_id: string;
+  organization_id?: string;
   period_month?: string; // e.g. "2026-08"
 }
 
@@ -15,13 +15,14 @@ export interface GenerateBusinessReportParams {
 export async function generate_business_report(
   params: GenerateBusinessReportParams
 ): Promise<BusinessReportResult> {
-  const { organization_id, period_month = "2026-08" } = params;
+  const { organization_id = "org_01", period_month = "2026-08" } = params;
+  const orgId = normalizeOrgId(organization_id);
 
   // 1. Fetch organization sales
   const { data: sales } = await adminDb
     .from("sales")
     .select("id, subtotal, tax, discount, total, sale_items ( product_id, quantity, selling_price )")
-    .eq("organization_id", organization_id);
+    .eq("organization_id", orgId);
 
   // 2. Fetch products
   const { data: products } = await adminDb
