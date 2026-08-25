@@ -31,7 +31,7 @@ export async function get_supplier_outstanding(
   const { data: purchases } = await adminDb
     .from("purchases")
     .select("supplier_id, status, total_amount, created_at")
-    .eq("organization_id", organization_id)
+    .eq("organization_id", orgId)
     .in("status", ["Ordered", "Received"]);
 
   const poCountMap: Record<string, number> = {};
