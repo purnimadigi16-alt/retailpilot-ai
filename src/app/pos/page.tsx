@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useDemoSession } from "@/context/DemoSessionContext";
 import { Product } from "@/types";
 import { getEffectiveGstRate, calculateCartGst } from "@/lib/gst";
+import { getClientProductsForOrg } from "@/lib/catalog";
 import {
   ShoppingCart,
   Barcode,
@@ -37,8 +38,8 @@ interface CartItem {
 export default function PosPage() {
   const { organizationId, organizationName, storeId, storeName } = useDemoSession();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(() => getClientProductsForOrg("org_01"));
+  const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -68,10 +69,9 @@ export default function PosPage() {
   }, [organizationId, storeId]);
 
   async function fetchProducts() {
-    setLoading(true);
     setFetchError(null);
+    const activeOrg = organizationId || "org_01";
     try {
-      const activeOrg = organizationId || "org_01";
       const res = await fetch(`/api/products?organization_id=${encodeURIComponent(activeOrg)}`);
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: Failed to load product catalog from server`);
@@ -82,11 +82,17 @@ export default function PosPage() {
       } else if (json.error) {
         throw new Error(json.error);
       } else {
-        setProducts([]);
+        setProducts(getClientProductsForOrg(activeOrg));
       }
     } catch (e: any) {
       console.error("[POS] Error fetching product catalog:", e);
-      setFetchError(e.message || "Failed to load product catalog");
+      // Fallback to local catalog rather than showing blank/broken screen
+      const fallbackItems = getClientProductsForOrg(activeOrg);
+      if (fallbackItems.length > 0) {
+        setProducts(fallbackItems);
+      } else {
+        setFetchError(e.message || "Failed to load product catalog");
+      }
     } finally {
       setLoading(false);
     }

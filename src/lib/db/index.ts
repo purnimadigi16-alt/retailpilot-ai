@@ -14,35 +14,7 @@ import {
   NotificationItem,
   AiReport,
 } from "@/types";
-import * as fs from "fs";
-import * as path from "path";
 
-// Helper to auto-load .env.local if not already in process.env
-function ensureEnvLoaded() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    try {
-      const envPath = path.resolve(process.cwd(), ".env.local");
-      if (fs.existsSync(envPath)) {
-        const content = fs.readFileSync(envPath, "utf-8");
-        content.split("\n").forEach((line) => {
-          const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-          if (match) {
-            const key = match[1];
-            let value = match[2] || "";
-            if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
-            if (!process.env[key]) {
-              process.env[key] = value.trim();
-            }
-          }
-        });
-      }
-    } catch {
-      // ignore
-    }
-  }
-}
-
-ensureEnvLoaded();
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -73,12 +45,22 @@ export const STORE_MAP: Record<string, string> = {
 
 export function normalizeOrgId(id?: string | null): string {
   if (!id) return "00000000-0000-0000-0000-000000000001";
-  return ORG_MAP[id.toLowerCase()] || id;
+  const clean = id.toLowerCase().trim();
+  if (ORG_MAP[clean]) return ORG_MAP[clean];
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean)) {
+    return clean;
+  }
+  return "00000000-0000-0000-0000-000000000001";
 }
 
 export function normalizeStoreId(id?: string | null): string | undefined {
   if (!id) return undefined;
-  return STORE_MAP[id.toLowerCase()] || id;
+  const clean = id.toLowerCase().trim();
+  if (STORE_MAP[clean]) return STORE_MAP[clean];
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean)) {
+    return clean;
+  }
+  return undefined;
 }
 
 export function getSupabaseAdmin() {

@@ -212,7 +212,7 @@ export default function SalesPage() {
                 <th className="p-3.5">Customer Profile</th>
                 <th className="p-3.5">Items Sold</th>
                 <th className="p-3.5 text-right">Subtotal</th>
-                <th className="p-3.5 text-right">Tax (8%)</th>
+                <th className="p-3.5 text-right">GST (₹)</th>
                 <th className="p-3.5 text-right">Total (₹)</th>
                 <th className="p-3.5">Payment Breakdown</th>
                 <th className="p-3.5 text-center">Action</th>
