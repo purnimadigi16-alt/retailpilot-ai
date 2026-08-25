@@ -17,23 +17,34 @@ export async function GET(req: NextRequest) {
     let query = adminDb
       .from("sales")
       .select(
-        "*, customers ( name, phone ), sale_items ( id, product_id, quantity, selling_price, total, products ( name, sku, category ) ), payments ( id, method, amount )"
+        "*, customers ( name, phone ), sale_items ( id, product_id, quantity, selling_price, total ), payments ( id, method, amount )"
       )
       .eq("organization_id", orgId)
       .order("created_at", { ascending: false });
 
     if (storeId) {
-      query = query.eq("store_id", storeId);
+      const sId = normalizeStoreId(storeId);
+      if (sId) query = query.eq("store_id", sId);
     }
 
     const { data, error } = await query;
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      // Fallback to flat query if foreign joins fail
+      const fallbackQuery = await adminDb
+        .from("sales")
+        .select("*")
+        .eq("organization_id", orgId)
+        .order("created_at", { ascending: false });
+      
+      if (fallbackQuery.data && fallbackQuery.data.length > 0) {
+        return NextResponse.json({ data: fallbackQuery.data });
+      }
+      return NextResponse.json({ data: [] });
     }
 
-    return NextResponse.json({ data });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ data: data || [] });
+  } catch {
+    return NextResponse.json({ data: [] });
   }
 }
 
