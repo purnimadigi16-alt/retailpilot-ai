@@ -160,6 +160,7 @@ export default function PosPage() {
     setCardAmount(0);
     setUpiAmount(0);
     setPointsAmount(0);
+    setSaleNotes("");
     setShowCheckoutModal(true);
   }
 
@@ -214,10 +215,15 @@ export default function PosPage() {
         throw new Error(json.error || "Checkout failed");
       }
 
+      const attachedCustomer = customers.find((c) => c.id === customerId);
+
       setCompletedSale({
         ...json,
         cartItems: [...cart],
         payments,
+        customerName: attachedCustomer ? attachedCustomer.name : undefined,
+        customerPhone: attachedCustomer ? attachedCustomer.phone : undefined,
+        notes: saleNotes.trim() || undefined,
         organizationName,
         storeName,
         timestamp: new Date().toLocaleString(),
@@ -528,6 +534,72 @@ export default function PosPage() {
               </select>
             </div>
 
+            {/* Quick Settle 1-Click Buttons */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] text-muted-foreground font-semibold">Quick Settle:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setCashAmount(finalTotal);
+                  setCardAmount(0);
+                  setUpiAmount(0);
+                  setPointsAmount(0);
+                }}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition border ${
+                  cashAmount === finalTotal
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                    : "bg-accent/60 border-border text-foreground hover:bg-accent"
+                }`}
+              >
+                💵 100% Cash
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUpiAmount(finalTotal);
+                  setCashAmount(0);
+                  setCardAmount(0);
+                  setPointsAmount(0);
+                }}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition border ${
+                  upiAmount === finalTotal
+                    ? "bg-purple-600 text-white border-purple-600 shadow-sm"
+                    : "bg-accent/60 border-border text-foreground hover:bg-accent"
+                }`}
+              >
+                📱 100% UPI
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCardAmount(finalTotal);
+                  setCashAmount(0);
+                  setUpiAmount(0);
+                  setPointsAmount(0);
+                }}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition border ${
+                  cardAmount === finalTotal
+                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                    : "bg-accent/60 border-border text-foreground hover:bg-accent"
+                }`}
+              >
+                💳 100% Card
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const half = Number((finalTotal / 2).toFixed(2));
+                  setCashAmount(half);
+                  setUpiAmount(Number((finalTotal - half).toFixed(2)));
+                  setCardAmount(0);
+                  setPointsAmount(0);
+                }}
+                className="rounded-lg px-2.5 py-1 text-[11px] font-semibold transition border bg-accent/60 border-border text-foreground hover:bg-accent"
+              >
+                ⚡ 50/50 Split
+              </button>
+            </div>
+
             {/* Split inputs */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between rounded-xl border border-border bg-background/60 p-2.5">
@@ -656,8 +728,18 @@ export default function PosPage() {
               <div className="text-center pb-2 border-b border-dashed border-zinc-400">
                 <h2 className="font-bold text-sm uppercase">{completedSale.organizationName}</h2>
                 <p className="text-[10px] text-zinc-600">{completedSale.storeName}</p>
-                <p className="text-[10px] text-zinc-600">Invoice: {completedSale.invoice_number}</p>
+                <p className="text-[10px] text-zinc-600 font-bold">Invoice: {completedSale.invoice_number}</p>
                 <p className="text-[9px] text-zinc-500">{completedSale.timestamp}</p>
+                {completedSale.customerName && (
+                  <p className="text-[10px] text-blue-800 font-semibold mt-1">
+                    Customer: {completedSale.customerName} ({completedSale.customerPhone || ""})
+                  </p>
+                )}
+                {completedSale.notes && (
+                  <p className="text-[10px] text-zinc-700 italic mt-0.5">
+                    Note: &ldquo;{completedSale.notes}&rdquo;
+                  </p>
+                )}
               </div>
 
               <div className="py-2 space-y-1 border-b border-dashed border-zinc-400">
@@ -674,15 +756,15 @@ export default function PosPage() {
               <div className="pt-1 space-y-1 text-[11px]">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>₹{completedSale.subtotal.toFixed(2)}</span>
+                  <span>₹{Number(completedSale.subtotal).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax (8%):</span>
-                  <span>₹{completedSale.tax.toFixed(2)}</span>
+                  <span>₹{Number(completedSale.tax).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-xs pt-1 border-t border-zinc-300">
                   <span>TOTAL:</span>
-                  <span>₹{completedSale.total.toFixed(2)}</span>
+                  <span>₹{Number(completedSale.total).toFixed(2)}</span>
                 </div>
               </div>
 
