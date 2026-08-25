@@ -9,13 +9,11 @@ import {
   Boxes,
   AlertTriangle,
   ShoppingCart,
-  Truck,
   Bot,
-  Zap,
-  ArrowUpRight,
-  ArrowDownRight,
-  ShieldCheck,
-  CheckCircle2,
+  RefreshCw,
+  AlertCircle,
+  FileText,
+  Package,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -25,16 +23,15 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  BarChart,
-  Bar,
 } from "recharts";
 
 export default function DashboardPage() {
-  const { role, organizationId, organizationName, storeId } = useDemoSession();
+  const { role, organizationId, organizationName, storeId, storeName } = useDemoSession();
 
   const [analytics, setAnalytics] = useState<any>(null);
   const [lowStockList, setLowStockList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -42,32 +39,48 @@ export default function DashboardPage() {
 
   async function fetchDashboardData() {
     setLoading(true);
+    setFetchError(null);
     try {
+      const activeOrg = organizationId || "org_01";
+      const activeStore = storeId || "store_01_main";
+
       const [analyticsRes, lowStockRes] = await Promise.all([
-        fetch(`/api/analytics?organization_id=${organizationId}&store_id=${storeId}`),
+        fetch(`/api/analytics?organization_id=${encodeURIComponent(activeOrg)}&store_id=${encodeURIComponent(activeStore)}`),
         fetch(`/api/mcp`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             tool: "get_low_stock_products",
-            args: { organization_id: organizationId, store_id: storeId },
+            args: { organization_id: activeOrg, store_id: activeStore },
           }),
         }),
       ]);
 
+      if (!analyticsRes.ok) {
+        throw new Error(`Analytics API returned HTTP ${analyticsRes.status}`);
+      }
+
       const analyticsJson = await analyticsRes.json();
       const lowStockJson = await lowStockRes.json();
 
-      if (analyticsJson.data) setAnalytics(analyticsJson.data);
-      if (lowStockJson.result) setLowStockList(lowStockJson.result);
-    } catch (err) {
-      console.error("Error fetching dashboard data:", err);
+      if (analyticsJson.data) {
+        setAnalytics(analyticsJson.data);
+      } else if (analyticsJson.error) {
+        throw new Error(analyticsJson.error);
+      }
+
+      if (lowStockJson.result && Array.isArray(lowStockJson.result)) {
+        setLowStockList(lowStockJson.result);
+      }
+    } catch (err: any) {
+      console.error("[Dashboard] Error fetching dashboard data:", err);
+      setFetchError(err.message || "Failed to load executive dashboard analytics");
     } finally {
       setLoading(false);
     }
   }
 
-  // Sample weekly trend data for charts
+  // Realistic revenue & profit trajectory data
   const revenueChartData = [
     { day: "Mon", revenue: 2400, profit: 1100 },
     { day: "Tue", revenue: 3100, profit: 1450 },
@@ -92,7 +105,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Real-time Operations & Financial P&L Ledger • Viewing as <strong className="text-foreground capitalize">{role.replace("_", " ")}</strong>
+            Real-time Operations & Financial P&L Ledger • {storeName} • Viewing as <strong className="text-foreground capitalize">{role.replace("_", " ")}</strong>
           </p>
         </div>
 
@@ -109,8 +122,35 @@ export default function DashboardPage() {
           >
             <Bot className="h-4 w-4" /> AI Assistant Studio
           </Link>
+          <button
+            onClick={fetchDashboardData}
+            title="Refresh Dashboard Data"
+            className="p-2 rounded-xl border border-border bg-background hover:bg-accent text-muted-foreground hover:text-foreground transition"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-blue-500" : ""}`} />
+          </button>
         </div>
       </div>
+
+      {/* Error Alert if any */}
+      {fetchError && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 flex items-center justify-between gap-4 text-xs animate-in fade-in">
+          <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <div>
+              <p className="font-bold">Error Loading Executive Analytics</p>
+              <p className="text-muted-foreground text-[11px] font-mono mt-0.5">{fetchError}</p>
+            </div>
+          </div>
+          <button
+            onClick={fetchDashboardData}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-500 transition shadow"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Retry</span>
+          </button>
+        </div>
+      )}
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -124,13 +164,13 @@ export default function DashboardPage() {
           </div>
           <div>
             <span className="text-2xl font-black tracking-tight text-foreground font-mono">
-              ₹{analytics?.revenue ? analytics.revenue.toFixed(2) : "0.00"}
+              ₹{Number(analytics?.revenue ?? 0).toFixed(2)}
             </span>
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-              <span>COGS: ₹{analytics?.cogs ? analytics.cogs.toFixed(2) : "0.00"}</span>
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
+              <span>COGS: ₹{Number(analytics?.cogs ?? 0).toFixed(2)}</span>
               <span>•</span>
               <span className="font-semibold text-emerald-600">
-                {analytics?.gross_margin ? analytics.gross_margin.toFixed(1) : 0}% Margin
+                {Number(analytics?.gross_margin_pct ?? analytics?.gross_margin ?? 0).toFixed(1)}% Margin
               </span>
             </div>
           </div>
@@ -148,10 +188,10 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-1">
             <span className="text-2xl font-black tracking-tight text-foreground font-mono">
-              ₹{analytics?.net_profit ? analytics.net_profit.toFixed(2) : "0.00"}
+              ₹{Number(analytics?.net_profit ?? 0).toFixed(2)}
             </span>
             <p className="text-[11px] text-muted-foreground">
-              After OpEx deduction (₹{analytics?.expenses ? analytics.expenses.toFixed(2) : "0.00"})
+              After OpEx deduction (₹{Number(analytics?.expenses ?? 0).toFixed(2)})
             </p>
           </div>
         </div>
@@ -168,7 +208,7 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-1">
             <span className="text-2xl font-black tracking-tight text-foreground font-mono">
-              ₹{analytics?.inventory_valuation ? analytics.inventory_valuation.toFixed(2) : "0.00"}
+              ₹{Number(analytics?.inventory_valuation ?? 0).toFixed(2)}
             </span>
             <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>{analytics?.total_inventory_units ?? 0} physical units in ledger</span>
@@ -255,7 +295,7 @@ export default function DashboardPage() {
 
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
             <span className="font-bold text-foreground">Total Overhead:</span>
-            <span className="font-mono font-bold text-foreground">₹{analytics?.expenses?.toFixed(2) ?? "0.00"}</span>
+            <span className="font-mono font-bold text-foreground">₹{Number(analytics?.expenses ?? 0).toFixed(2)}</span>
           </div>
         </div>
       </div>
