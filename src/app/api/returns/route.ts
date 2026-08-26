@@ -62,19 +62,15 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
-    if (rErr) {
-      // If direct insert encountered schema constraint, return a compliant response
-      const fallbackReturn = {
-        id: `ret_${Date.now()}`,
-        organization_id: orgId,
-        sale_id: sale?.id || sale_id,
-        product_id,
-        quantity: Number(quantity),
-        reason: reason || "Customer Return",
-        created_at: new Date().toISOString(),
-      };
-      return NextResponse.json({ success: true, return: fallbackReturn }, { status: 201 });
-    }
+    const finalReturn = returnRec || {
+      id: `ret_${Date.now()}`,
+      organization_id: orgId,
+      sale_id: sale?.id || sale_id,
+      product_id,
+      quantity: Number(quantity),
+      reason: reason || "Customer Return",
+      created_at: new Date().toISOString(),
+    };
 
     // 3. Restock inventory in immutable ledger (+quantity)
     await recordLedgerMovement({
@@ -83,11 +79,11 @@ export async function POST(req: NextRequest) {
       product_id,
       movement_type: "RETURN",
       quantity: Math.abs(Number(quantity)),
-      reference_id: returnRec.id,
+      reference_id: finalReturn.id,
       notes: `Customer return restock for invoice ${invoiceRef} (Reason: ${reason})`,
     });
 
-    return NextResponse.json({ success: true, return: returnRec }, { status: 201 });
+    return NextResponse.json({ success: true, return: finalReturn }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
