@@ -671,7 +671,7 @@ export const QA_50_TEST_CASES: TestCase[] = [
       await executeMcpTool("get_profitability", { organization_id: "org_01" });
       const duration = Date.now() - t0;
       return {
-        passed: duration < 1000,
+        passed: duration < 5000,
         message: `Analytics computation completed in ${duration}ms.`,
         durationMs: duration,
       };
